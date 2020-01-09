@@ -7,7 +7,7 @@ module.exports = {
     port: db.port || 3306,
     username: db.username || "root",
     password: db.password || "",
-    database: db.database || "contentry",
+    database: db.database || "mashi_coro",
     synchronize: db.synchronize || false,
     logging: db.logging || false,
     entities: ["dist/**/*.entity{.ts,.js}"],
