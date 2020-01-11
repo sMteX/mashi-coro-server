@@ -1,0 +1,68 @@
+- az 4 hraci - A, B, C, D
+
+- hrac A otevre klienta
+- A vybere Novou hru, vybere si jmeno, potvrdi - vygeneruje se odkaz - pozvanka do hry
+- A se dostane do "lobby", mezitim posle odkaz B, C, D
+- B, C, D postupne otevrou odkaz, kazdy si vybere jmeno, dostanou se do stejne lobby
+- aby se hra okamzite nespustila, je treba aby kazdy z 4 potvrdil ready check
+	- kdyz nekdo behem toho leavne (zavre zalozku), odebere se z lobby
+- otevre se hra/herni stul, prichystaji se karty, rozdaji se karty a penize hracum
+- nahodne se vylosuje startovni hrac, dale se jede kazde kolo po smeru hodinovych rucicek
+
+- do konce hry se opakuji postupne tahy hracu, ktere spocivaji v:
+	- hrac si hodi kostkou (nebo 2 podle vyberu)
+	- aktivuji se efekty karet ktere jsou pro vsechny
+	- aktivuji se jeho efekty karet
+	- muze si koupit 1 kartu
+- pokud nektery hrac opusti hru, tak zmizi od stolu, pokud u stolu zbydou aspon 2 hraci, hra pokracuje
+
+------------------------------------------------------------
+- ted trochu technicteji
+- nektery veci by se mohly delat AJAXem pres normalni REST api (asi veci pred samotnou lobby/hrou)
+
+- hrac A otevre klienta
+- A vybere Novou hru, vybere si jmeno, potvrdi - vygeneruje se odkaz - pozvanka do hry
+	= vyber nove hry asi jeste na klientovi, vyber jmena a potvrzeni taky
+	= po kliknuti na potvrzeni se muze poslat normalni REST req pro vytvoreni hry
+	= vytvori se hra, odkaz na ni se zasle zpatky na klienta
+	= zaroven se otevre WS spojeni a nejak musim spojit toho konkretniho klienta/hrace s instanci te hry
+- A se dostane do "lobby", mezitim posle odkaz B, C, D
+	= v lobby vicemene ceka, nemuze nic delat dokud tam neni aspon 1 dalsi hrac
+- B, C, D postupne otevrou odkaz, kazdy si vybere jmeno, dostanou se do stejne lobby
+	= otevrou odkaz - ten se dostane bohuzel nejdriv na klienta, takze se otevre nejaka stranka, slug z odkazu se posle AJAXem na server
+	= vyhodnoti se, pokud to projde, tak se to potvrdi na klientovi, pak si muze vybrat to jmeno, potvrdi zpatky
+	= tady se asi muze otevrit dalsi WS, ktery prida dalsiho klienta do te hry
+	= broadcastne se vzdycky event, ktery oznami ostatnim prijemcum, ze dalsi hrac prisel do hry
+- aby se hra okamzite nespustila, je treba aby kazdy z 4 potvrdil ready check
+	= tim posle WS event na server, ze je ready
+	= jak server zaznamena, ze jsou ready vsichni, broadcastne start hry
+
+	- kdyz nekdo behem toho leavne (zavre zalozku), odebere se z lobby
+		= pred zavrenim te zalozky se musi poslat event ze hrac konci - je treba odebrat ho ze hry a zavrit socket
+- otevre se hra/herni stul, prichystaji se karty, rozdaji se karty a penize hracum
+	= po broadcastu startu hry na to muze nejak zareagovat klient u vsech, zobrazi to herni pole + prida karty + penize atd.
+	= dal bych tam i malou prodlevu predtim nez to zacne (ale hra stejne neni na cas tak na tom moc nezalezi)
+- nahodne se vylosuje startovni hrac, dale se jede kazde kolo po smeru hodinovych rucicek
+	= ten startovni hrac se muze poslat uz v ramci otevirani herniho stolu
+- do konce hry se opakuji postupne tahy hracu, ktere spocivaji v:
+	= pri startu kola se posle broadcast (ktery nutne asi pujde pres server ale ten to spis preposle nejspis), ze dany hrac zacina tah = animace/zvyrazneni na klientech, zablokovani akci toho cloveka, ktery neni na tahu
+
+	- hrac si hodi kostkou (nebo 2 podle vyberu)
+		= klient musi brat v potaz kartu, kterou si muze vybrat
+		= po vyberu a kliknuti na nejaky tlacitko nebo neco se blokne reaktivita (behem losovani cisla a aktivovani karet at nemuze nic nikdo delat)
+		= vygeneruje se cislo (klidne na klientovi), posle se event na server s tim cislem
+		= ten ho preposle jako broadcast i ostatnim klientum
+	- aktivuji se efekty karet ktere jsou pro vsechny - prijmy, cerveny karty...
+		= vyhodnoti server, rozesle pripadne eventy klientum
+	- aktivuji se jeho efekty karet
+		= tak stejne, pokud jde o fialove karty tak si muze pripadne vybrat
+	- muze si koupit 1 kartu
+		= po ukonceni predchozich akci se posle event kterym se zprovozni nakup
+		= hrac si pak muze vybrat jestli neco kupuje anebo ne
+		= v kazdem pripade svoji akci posle na server, ten to opet preposle ostatnim
+	
+	= po ukonceni tahu se posle broadcast, ze hrac ukoncil tah 
+	= server zkontroluje podminky vyhry, pripadne ukonci hru anebo posle event, ze dalsi hrac muze jit na tah
+- pokud nektery hrac opusti hru, tak zmizi od stolu, pokud u stolu zbydou aspon 2 hraci, hra pokracuje
+	= pred zavrenim te zalozky se musi poslat event ze hrac konci 
+	= odebere se ze hry, posle se broadcast ostatnim, zkontrolujou se podminky hry (2+ hracu), zavre se socket

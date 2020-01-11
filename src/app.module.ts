@@ -1,16 +1,17 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_PIPE } from '@nestjs/core';
-import { WsModule } from '@app/ws/ws.module';
-import { ApiModule } from '@app/api/api.module';
+import { ApiController } from '@app/api.controller';
+import { GatewaysModule } from '@app/gateways/gateways.module';
+import { Game } from '@app/database/entities/game.entity';
 
 @Module({
     imports: [
         TypeOrmModule.forRoot(),
-        WsModule,
-        ApiModule,
-        AppModule
+        TypeOrmModule.forFeature([Game]),
+        GatewaysModule
     ],
+    controllers: [ApiController],
     providers: [
         {
             provide: APP_PIPE,
