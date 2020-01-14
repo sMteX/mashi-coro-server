@@ -18,7 +18,9 @@ export class ApiController {
     }
 
     @Post('/validateGame')
-    validateGameSlug(): void {
+    async validateGameSlug(slug: string): Promise<boolean> {
         // TODO: verify if the slug is correct and the game is playable probably
+        const game = await this.gameRepository.findOne({ slug });
+        return !!game;
     }
 }

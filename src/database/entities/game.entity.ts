@@ -13,5 +13,13 @@ export class Game {
     // TODO: store references to players (with sockets? order?)
     players: Player[] = [];
 
-    constructor() { }
+    readyCheck(): boolean {
+        return this.players.every(player => player.lobbyReady);
+    }
+    getPlayer(id: string): Player {
+        return this.players.find(player => player.socketId === id);
+    }
+    removePlayer(id: string): void {
+        this.players = this.players.filter(player => player.socketId !== id);
+    }
 }

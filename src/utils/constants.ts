@@ -10,7 +10,8 @@ export const events = {
             GAME_PLAYABLE: 'gamePlayable',
             PLAYER_ENTERED_LOBBY: 'playerEnteredLobby',
             PLAYER_CHANGED_READY_STATUS: 'playerChangedReadyStatus',
-            PLAYER_LEFT_LOBBY: 'playerLeftLobby'
+            PLAYER_LEFT_LOBBY: 'playerLeftLobby',
+            ALL_READY: 'allReady'
         }
     }
 };
