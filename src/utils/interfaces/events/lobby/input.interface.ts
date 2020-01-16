@@ -1,8 +1,15 @@
-export interface PlayerEnter {
-    playerName: string;
+interface BaseInput {
     game: string;
 }
 
-export interface PlayerReadyStatus {
+export interface PlayerEnter extends BaseInput{
+    playerName: string;
+}
+
+export interface PlayerReadyStatus extends BaseInput{
     ready: boolean;
 }
+
+export interface PlayerLeft extends BaseInput {}
+
+export interface GetPlayers extends BaseInput {}

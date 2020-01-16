@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { Game } from '@app/database/entities/game.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,9 +18,9 @@ export class ApiController {
     }
 
     @Post('/validateGame')
-    async validateGameSlug(slug: string): Promise<boolean> {
+    async validateGameSlug(@Body() data: { slug: string; }): Promise<boolean> {
         // TODO: verify if the slug is correct and the game is playable probably
-        const game = await this.gameRepository.findOne({ slug });
+        const game = await this.gameRepository.findOne({ slug: data.slug });
         return !!game;
     }
 }

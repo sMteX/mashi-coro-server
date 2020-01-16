@@ -4,7 +4,8 @@ export const events = {
         input: {
             PLAYER_ENTER: 'playerEnter',
             PLAYER_READY_STATUS: 'playerReadyStatus',
-            PLAYER_LEFT: 'playerLeft'
+            PLAYER_LEFT: 'playerLeft',
+            GET_PLAYERS: 'getPlayers'
         },
         output: {
             GAME_PLAYABLE: 'gamePlayable',
