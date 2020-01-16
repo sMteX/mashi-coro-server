@@ -39,7 +39,8 @@ export class LobbyGateway implements OnGatewayDisconnect {
             this.games[data.game] = await this.gameRepository.findOne({ slug: data.game });
         }
 
-        this.games[data.game].players.push({
+        // TODO: use actual player entities and save them
+        this.games[data.game]._players.push({
             name: data.playerName,
             socketId: client.id,
             lobbyReady: false
@@ -82,7 +83,8 @@ export class LobbyGateway implements OnGatewayDisconnect {
     @SubscribeMessage(events.input.GET_PLAYERS)
     getPlayers(@MessageBody() data: GetPlayers,
                @ConnectedSocket() client: Socket): LobbyPlayer[] {
-        return this.games[data.game].players.map(player => ({
+        // TODO: use actual player entities?
+        return this.games[data.game]._players.map(player => ({
             id: player.socketId,
             name: player.name,
             ready: player.lobbyReady
@@ -111,5 +113,6 @@ export class LobbyGateway implements OnGatewayDisconnect {
             playerId: client.id
         });
         // TODO: if game has zero players, remove from this.games and also DB
+        // TODO: actually remove player from the DB
     }
 }

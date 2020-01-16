@@ -1,5 +1,6 @@
-import { Column, Entity, Generated, PrimaryGeneratedColumn } from 'typeorm';
-import { Player } from '@app/classes/player';
+import { Column, Entity, Generated, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Player as PlayerClass } from '@app/classes/player';
+import { Player as PlayerEntity } from './player.entity';
 
 @Entity()
 export class Game {
@@ -10,16 +11,20 @@ export class Game {
     @Generated('uuid')
     slug: string;
 
+    @OneToMany(type => PlayerEntity, player => player.game)
+    players: PlayerEntity[];
+
     // TODO: store references to players (with sockets? order?)
-    players: Player[] = [];
+    // tslint:disable-next-line:variable-name
+    _players: PlayerClass[] = [];
 
     readyCheck(): boolean {
-        return this.players.every(player => player.lobbyReady);
+        return this._players.every(player => player.lobbyReady);
     }
-    getPlayer(id: string): Player {
-        return this.players.find(player => player.socketId === id);
+    getPlayer(id: string): PlayerClass {
+        return this._players.find(player => player.socketId === id);
     }
     removePlayer(id: string): void {
-        this.players = this.players.filter(player => player.socketId !== id);
+        this._players = this._players.filter(player => player.socketId !== id);
     }
 }
