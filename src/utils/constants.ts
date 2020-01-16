@@ -16,5 +16,14 @@ export const events = {
             ALL_READY: 'allReady',
             GAME_STARTED: 'gameStarted'
         }
+    },
+    game: {
+        namespaceName: 'game',
+        input: {
+
+        },
+        output: {
+
+        }
     }
 };

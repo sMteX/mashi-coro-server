@@ -1,0 +1,3 @@
+interface BaseInput {
+    game: string;
+}
