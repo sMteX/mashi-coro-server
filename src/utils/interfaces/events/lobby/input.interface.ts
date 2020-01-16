@@ -13,3 +13,5 @@ export interface PlayerReadyStatus extends BaseInput{
 export interface PlayerLeft extends BaseInput {}
 
 export interface GetPlayers extends BaseInput {}
+
+export interface StartGame extends BaseInput {}

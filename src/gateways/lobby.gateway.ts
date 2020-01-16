@@ -14,7 +14,7 @@ import {
     GetPlayers,
     PlayerEnter,
     PlayerLeft,
-    PlayerReadyStatus
+    PlayerReadyStatus, StartGame
 } from '@utils/interfaces/events/lobby/input.interface';
 import { LobbyPlayer } from '@utils/interfaces/events/lobby/output.interface';
 import { events as eventConstants } from '@utils/constants';
@@ -71,6 +71,12 @@ export class LobbyGateway implements OnGatewayDisconnect {
         if (this.games[data.game].readyCheck()) {
             this.server.in(data.game).emit(events.output.ALL_READY);
         }
+    }
+
+    @SubscribeMessage(events.input.START_GAME)
+    startGame(@MessageBody() data: StartGame,
+              @ConnectedSocket() client: Socket): void {
+        this.server.in(data.game).emit(events.output.GAME_STARTED);
     }
 
     @SubscribeMessage(events.input.GET_PLAYERS)
