@@ -2,13 +2,9 @@ import { Column, Entity, Generated, ManyToOne, PrimaryGeneratedColumn, Unique } 
 import { Game } from './game.entity';
 
 @Entity()
-@Unique(['socketId'])
 export class Player {
     @PrimaryGeneratedColumn()
     id: number;
-
-    @Column()
-    socketId: string;
 
     @Column()
     name: string;

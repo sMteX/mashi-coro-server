@@ -33,9 +33,10 @@ export class LobbyGateway implements OnGatewayDisconnect {
     server: Server;
 
     private games: { [gameSlug: string]: Game; } = {};
+    private socketIdMap: { [playerId: string]: number; } = {};
     private readiness: {
         [gameSlug: string]: {
-            [playerId: string]: boolean
+            [playerId: number]: boolean
         }
     } = {};
 
@@ -45,28 +46,28 @@ export class LobbyGateway implements OnGatewayDisconnect {
 
     @SubscribeMessage(events.input.PLAYER_ENTER)
     async playerEnter(@MessageBody() data: PlayerEnter,
-                      @ConnectedSocket() client: Socket): Promise<void> {
+                      @ConnectedSocket() client: Socket): Promise<number> {
         if (!this.games[data.game]) {
             this.games[data.game] = await this.gameRepository.findOne({ slug: data.game });
             this.readiness[data.game] = {};
         }
 
         // creates a new player entity and saves it (this.games[...].players DOESN'T HAVE the reference to it because we loaded it before this save, but we don't need it)
-        const entity = new Player({
+        let player = new Player({
             name: data.playerName,
-            socketId: client.id,
             game: this.games[data.game]
         });
-        await this.playerRepository.save(entity);
+        player = await this.playerRepository.save(player);
+        this.socketIdMap[client.id] = player.id;
 
         // store the lobby readiness status locally
-        this.readiness[data.game][client.id] = false;
+        this.readiness[data.game][player.id] = false;
         // with this, all players should be joined in a room with the game's slug as an id
         // emitting to all players in the game should be then easier
         client.join(data.game);
         // emit to all other players in the lobby - EXCEPT sender
         client.to(data.game).emit(events.output.PLAYER_ENTERED_LOBBY, {
-            id: client.id,
+            id: player.id,
             name: data.playerName
         });
         // I hope this doesn't count any other properties...
@@ -74,15 +75,18 @@ export class LobbyGateway implements OnGatewayDisconnect {
             // emit to all players in the room (including sender)
             this.server.in(data.game).emit(events.output.GAME_PLAYABLE);
         }
+        // return new player's ID
+        return player.id;
     }
 
     @SubscribeMessage(events.input.PLAYER_READY_STATUS)
     playerReadyStatus(@MessageBody() data: PlayerReadyStatus,
                       @ConnectedSocket() client: Socket): void {
-        this.readiness[data.game][client.id] = data.ready;
+        const playerId = this.socketIdMap[client.id];
+        this.readiness[data.game][playerId] = data.ready;
         // let client take care of pairing ID and names
         client.to(data.game).emit(events.output.PLAYER_CHANGED_READY_STATUS, {
-            id: client.id,
+            id: playerId,
             newStatus: data.ready
         });
         if (this.readyCheck(data.game)) {
@@ -105,9 +109,9 @@ export class LobbyGateway implements OnGatewayDisconnect {
             relations: ['players']
         });
         return this.games[data.game].players.map((player) => {
-            const readiness = this.readiness[data.game][player.socketId];
+            const readiness = this.readiness[data.game][player.id];
             return {
-                id: player.socketId,
+                id: player.id,
                 name: player.name,
                 ready: readiness
             };
@@ -124,7 +128,7 @@ export class LobbyGateway implements OnGatewayDisconnect {
         // since the client closed the tab, find the game he was in (usually this is sent alongside each event)
         const game: Game = await createQueryBuilder(Game, 'game')
             .innerJoin('game.players', 'player')
-            .where('player.socketId = :id', { id: client.id })
+            .where('player.id = :id', { id: this.socketIdMap[client.id] })
             .getOne();
         await this.removePlayerFromGame(client, game);
     }
@@ -133,12 +137,14 @@ export class LobbyGateway implements OnGatewayDisconnect {
         if (!game) {
             return;
         }
+        const playerId = this.socketIdMap[client.id];
         await this.playerRepository.delete({
-            socketId: client.id
+            id: playerId
         });
-        delete this.readiness[game.slug][client.id];
+        delete this.readiness[game.slug][playerId];
+        delete this.socketIdMap[client.id];
         client.to(game.slug).emit(events.output.PLAYER_LEFT_LOBBY, {
-            id: client.id
+            id: playerId
         });
         client.leave(game.slug);
         // TODO: if game has zero players, remove from this.games and also DB
