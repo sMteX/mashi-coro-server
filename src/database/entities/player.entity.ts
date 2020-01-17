@@ -10,6 +10,13 @@ export class Player {
     @Column()
     socketId: string;
 
+    @Column()
+    name: string;
+
     @ManyToOne(type => Game, game => game.players)
     game: Game;
+
+    constructor(data: Partial<Player>) {
+        Object.assign(this, data);
+    }
 }
