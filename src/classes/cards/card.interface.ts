@@ -11,7 +11,31 @@ export enum CardSymbol {
     Other // Obchodni dum...
 }
 
+export enum CardName {
+    WheatField,
+    Farm,
+    Bakery,
+    CoffeeShop,
+    Shop,
+    Forest,
+    Stadium,
+    TelevisionStudio,
+    OfficeBuilding,
+    DairyShop,
+    FurnitureFactory,
+    Mine,
+    ApplePark,
+    Restaurant,
+    Mall,
+
+    Station,
+    ShoppingCenter,
+    AmusementPark,
+    Transmitter
+}
+
 export interface Card {
+    cardName: CardName;
     name: string;
     triggerNumbers: number[];
     symbol: CardSymbol;

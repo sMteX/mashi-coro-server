@@ -67,17 +67,27 @@ export class GameGateway implements OnGatewayDisconnect {
         client.join(data.game); // join the game room
 
         // players will connect in matter of milliseconds to seconds apart from each other, might as well wait and send all the info at once
-        if (this.allPlayersConnected(this.games[data.game].game)) {
-            this.games[data.game].handler = new GameHandler(this.games[data.game].game, this.server, this.socketIdMap);
+        if (this.allPlayersConnected(this.g(data.game))) {
+            this.games[data.game].handler = new GameHandler(this.g(data.game), this.server, this.socketIdMap);
 
             // emit starting data to the room - players (names, cards, money), buyable cards, game bank etc. - to setup the client UI
-            const gameStartingData = this.games[data.game].handler.constructInitialData();
+            const gameStartingData = this.h(data.game).constructInitialData();
             this.server.in(data.game).emit(events.output.GAME_STARTING, gameStartingData);
 
-            setTimeout(() => {
-                // actually start the game in GameHandler - pick a player, allow them to play, block the others
-            }, 500);
+            // setTimeout(() => {
+            //     // actually start the game in GameHandler - pick a player, allow them to play, block the others
+            // }, 500);
         }
+    }
+
+    g(id: string): Game {
+        // since this.games[data.game].game is way too often used and way too long and repetitive, this is just a getter
+        return this.games[id].game;
+    }
+
+    h(id: string): GameHandler {
+        // same with handler
+        return this.games[id].handler;
     }
 
     allPlayersConnected(game: Game) {

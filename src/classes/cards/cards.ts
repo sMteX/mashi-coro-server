@@ -1,7 +1,8 @@
-import { Card, CardSymbol } from './card.interface';
+import { Card, CardName, CardSymbol } from './card.interface';
 import { GameHandler } from '../gameHandler';
 
 export class WheatField implements Card {
+    cardName = CardName.WheatField;
     name = 'Pšeničné pole';
     cost = 1;
     description = 'Vezměte si 1 minci z banku';
@@ -17,6 +18,7 @@ export class WheatField implements Card {
 }
 
 export class Farm implements Card {
+    cardName = CardName.Farm;
     name = 'Statek';
     cost = 1;
     description = 'Vezměte si 1 minci z banku';
@@ -32,6 +34,7 @@ export class Farm implements Card {
 }
 
 export class Bakery implements Card {
+    cardName = CardName.Bakery;
     name = 'Pekárna';
     cost = 1;
     description = 'Vezměte si 1 minci z banku';
@@ -48,6 +51,7 @@ export class Bakery implements Card {
 }
 
 export class CoffeeShop implements Card {
+    cardName = CardName.CoffeeShop;
     name = 'Kavárna';
     cost = 2;
     description = 'Dostanete 1 minci od hráče na tahu';
@@ -69,6 +73,7 @@ export class CoffeeShop implements Card {
 }
 
 export class Shop implements Card {
+    cardName = CardName.Shop;
     name = 'Samoobsluha';
     cost = 2;
     description = 'Vezměte si 3 mince z banku';
@@ -85,6 +90,7 @@ export class Shop implements Card {
 }
 
 export class Forest implements Card {
+    cardName = CardName.Forest;
     name = 'Les';
     cost = 3;
     description = 'Vezměte si 1 minci z banku';
@@ -101,6 +107,7 @@ export class Forest implements Card {
 
 // purple cards
 export class Stadium implements Card {
+    cardName = CardName.Stadium;
     name = 'Stadión';
     cost = 6;
     description = 'Dostanete 2 mince od každého soupeře';
@@ -119,6 +126,7 @@ export class Stadium implements Card {
 }
 
 export class TelevisionStudio implements Card {
+    cardName = CardName.TelevisionStudio;
     name = 'Stadión';
     cost = 7;
     description = 'Dostanete 5 mincí od zvoleného soupeře';
@@ -135,6 +143,7 @@ export class TelevisionStudio implements Card {
 }
 
 export class OfficeBuilding implements Card {
+    cardName = CardName.OfficeBuilding;
     name = 'Kancelářská budova';
     cost = 8;
     description = 'Můžete vyměnit jednu svoji kartu objektu za soupeřovu (nelze měnit Věže)';
@@ -154,6 +163,7 @@ export class OfficeBuilding implements Card {
 }
 //
 export class DairyShop implements Card {
+    cardName = CardName.DairyShop;
     name = 'Mlékárna';
     cost = 5;
     description = 'Za každý svůj objekt Prase si vezměte 3 mince z banku';
@@ -170,6 +180,7 @@ export class DairyShop implements Card {
 }
 
 export class FurnitureFactory implements Card {
+    cardName = CardName.FurnitureFactory;
     name = 'Továrna na nábytek';
     cost = 3;
     description = 'Za každý svůj objekt Kolečko si vezměte 3 mince z banku';
@@ -186,6 +197,7 @@ export class FurnitureFactory implements Card {
 }
 
 export class Mine implements Card {
+    cardName = CardName.Mine;
     name = 'Důl';
     cost = 6;
     description = 'Vezměte si 5 mincí z banku';
@@ -201,6 +213,7 @@ export class Mine implements Card {
 }
 
 export class ApplePark implements Card {
+    cardName = CardName.ApplePark;
     name = 'Jabloňový sad';
     cost = 3;
     description = 'Vezměte si 3 mince z banku';
@@ -216,6 +229,7 @@ export class ApplePark implements Card {
 }
 
 export class Restaurant implements Card {
+    cardName = CardName.Restaurant;
     name = 'Restaurace';
     cost = 3;
     description = 'Dostanete 2 minci od hráče na tahu';
@@ -237,6 +251,7 @@ export class Restaurant implements Card {
 }
 
 export class Mall implements Card {
+    cardName = CardName.Mall;
     name = 'Obchodní dům';
     cost = 2;
     description = 'Za každý svůj objekt Obilí si vezměte 2 mince z banku';
@@ -254,6 +269,7 @@ export class Mall implements Card {
 
 // Winning cards
 export class Station implements Card {
+    cardName = CardName.Station;
     name = 'Nádraží';
     cost = 4;
     description = 'Můžete házet jednou nebo dvěma kostkami.';
@@ -268,6 +284,7 @@ export class Station implements Card {
 }
 
 export class ShoppingCenter implements Card {
+    cardName = CardName.ShoppingCenter;
     name = 'Nákupní centrum';
     cost = 10;
     description = 'Dostáváte-li příjmy za objekty Kafe nebo Toast, dostanete za každý z nich o 1 minci více.';
@@ -282,6 +299,7 @@ export class ShoppingCenter implements Card {
 }
 
 export class AmusementPark implements Card {
+    cardName = CardName.AmusementPark;
     name = 'Zábavní park';
     cost = 16;
     description = 'Pokud vám při hodu dvěma kostkami padnou stejná čísla, máte tah navíc.';
@@ -296,6 +314,7 @@ export class AmusementPark implements Card {
 }
 
 export class Transmitter implements Card {
+    cardName = CardName.Transmitter;
     name = 'Vysílač';
     cost = 22;
     description = 'Jednou v každém tahu smíte znovu hodit kostkami.';

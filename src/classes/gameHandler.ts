@@ -84,23 +84,22 @@ export class GameHandler {
             ],
             money: 3
         }));
-        // TODO: correct amount of cards
         const buyableCards = [
-            { card: new WheatField(), count: 1 },
-            { card: new Farm(), count: 1 },
-            { card: new Bakery(), count: 1 },
-            { card: new CoffeeShop(), count: 1 },
-            { card: new Shop(), count: 1 },
-            { card: new Forest(), count: 1 },
-            { card: new Stadium(), count: 1 },
-            { card: new TelevisionStudio(), count: 1 },
-            { card: new OfficeBuilding(), count: 1 },
-            { card: new DairyShop(), count: 1 },
-            { card: new FurnitureFactory(), count: 1 },
-            { card: new Mine(), count: 1 },
-            { card: new ApplePark(), count: 1 },
-            { card: new Restaurant(), count: 1 },
-            { card: new Mall(), count: 1 }
+            { card: new WheatField(), count: 6 },
+            { card: new Farm(), count: 6 },
+            { card: new Bakery(), count: 6 },
+            { card: new CoffeeShop(), count: 6 },
+            { card: new Shop(), count: 6 },
+            { card: new Forest(), count: 6 },
+            { card: new Stadium(), count: 4 },
+            { card: new TelevisionStudio(), count: 4 },
+            { card: new OfficeBuilding(), count: 4 },
+            { card: new DairyShop(), count: 6 },
+            { card: new FurnitureFactory(), count: 6 },
+            { card: new Mine(), count: 6 },
+            { card: new ApplePark(), count: 6 },
+            { card: new Restaurant(), count: 6 },
+            { card: new Mall(), count: 6 }
         ];
         const winningCards = [
             new Station(), new ShoppingCenter(), new AmusementPark(), new Transmitter()
