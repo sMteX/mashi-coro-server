@@ -60,9 +60,44 @@
 		= po ukonceni predchozich akci se posle event kterym se zprovozni nakup
 		= hrac si pak muze vybrat jestli neco kupuje anebo ne
 		= v kazdem pripade svoji akci posle na server, ten to opet preposle ostatnim
-	
-	= po ukonceni tahu se posle broadcast, ze hrac ukoncil tah 
+
+	= po ukonceni tahu se posle broadcast, ze hrac ukoncil tah
 	= server zkontroluje podminky vyhry, pripadne ukonci hru anebo posle event, ze dalsi hrac muze jit na tah
 - pokud nektery hrac opusti hru, tak zmizi od stolu, pokud u stolu zbydou aspon 2 hraci, hra pokracuje
-	= pred zavrenim te zalozky se musi poslat event ze hrac konci 
+	= pred zavrenim te zalozky se musi poslat event ze hrac konci
 	= odebere se ze hry, posle se broadcast ostatnim, zkontrolujou se podminky hry (2+ hracu), zavre se socket
+
+---------------------------------------------------------------
+Machi Koro original, obsah baleni:
+- pravidla hry
+- startovni karty (1 + 1 pro kazdeho hrace)
+    - Psenicne pole
+    - Pekarna
+- vitezne karty (1 od kazde pro vsechny hrace)
+    - Nadrazi
+    - Nakupni centrum
+    - Zabavni park
+    - Vysilac
+- herni karty (ty co maj normalne cenovku, co si muzeme kupovat vsichni):
+    - 6x Psenicne pole
+    - 6x Statek
+    - 6x Pekarna
+    - 6x Kavarna
+    - 6x Samoobsluha
+    - 6x Les
+    - 4x Televizni studio
+    - 4x Stadion
+    - 4x Kancelarska budova
+    - 6x Mlekarna
+    - 6x Tovarna na nabytek
+    - 6x Dul
+    - 6x Restaurace
+    - 6x Jablonovy sad
+    - 6x Obchodni dum
+
+
+
+
+
+
+
