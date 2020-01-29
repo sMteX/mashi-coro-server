@@ -75,8 +75,13 @@ export class GameHandler {
     }
 
     constructInitialData() {
+        const idSocketMap = {};
+        Object.entries(this.socketIdMap).forEach(([socket, id]) => {
+            idSocketMap[id] = socket;
+        });
         const players = this.game.players.map(player => ({
             id: player.id,
+            socketId: idSocketMap[player.id],
             name: player.name,
             cards: [
                 { card: new WheatField(), count: 1 },
