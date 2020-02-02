@@ -1,4 +1,4 @@
-import { Card, CardName, CardSymbol } from './card.interface';
+import { Card, CardColor, CardName, CardSymbol } from './card.interface';
 import { GameHandler } from '../gameHandler';
 
 export class WheatField implements Card {
@@ -7,6 +7,7 @@ export class WheatField implements Card {
     cost = 1;
     description = 'Vezměte si 1 minci z banku';
     symbol = CardSymbol.Wheat;
+    color = CardColor.Blue;
     triggerNumbers = [1];
     canBeTriggeredByOthers = true;
     canBeTriggeredBySelf = true;
@@ -23,6 +24,7 @@ export class Farm implements Card {
     cost = 1;
     description = 'Vezměte si 1 minci z banku';
     symbol = CardSymbol.Pig;
+    color = CardColor.Blue;
     triggerNumbers = [2];
     canBeTriggeredByOthers = true;
     canBeTriggeredBySelf = true;
@@ -39,6 +41,7 @@ export class Bakery implements Card {
     cost = 1;
     description = 'Vezměte si 1 minci z banku';
     symbol = CardSymbol.Toast;
+    color = CardColor.Green;
     triggerNumbers = [2, 3];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = true;
@@ -56,6 +59,7 @@ export class CoffeeShop implements Card {
     cost = 2;
     description = 'Dostanete 1 minci od hráče na tahu';
     symbol = CardSymbol.Coffee;
+    color = CardColor.Red;
     triggerNumbers = [3];
     canBeTriggeredByOthers = true;
     canBeTriggeredBySelf = false;
@@ -78,6 +82,7 @@ export class Shop implements Card {
     cost = 2;
     description = 'Vezměte si 3 mince z banku';
     symbol = CardSymbol.Toast;
+    color = CardColor.Green;
     triggerNumbers = [4];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = true;
@@ -95,6 +100,7 @@ export class Forest implements Card {
     cost = 3;
     description = 'Vezměte si 1 minci z banku';
     symbol = CardSymbol.Cog;
+    color = CardColor.Blue;
     triggerNumbers = [5];
     canBeTriggeredByOthers = true;
     canBeTriggeredBySelf = true;
@@ -112,6 +118,7 @@ export class Stadium implements Card {
     cost = 6;
     description = 'Dostanete 2 mince od každého soupeře';
     symbol = CardSymbol.Tower;
+    color = CardColor.Purple;
     triggerNumbers = [6];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = true;
@@ -127,10 +134,11 @@ export class Stadium implements Card {
 
 export class TelevisionStudio implements Card {
     cardName = CardName.TelevisionStudio;
-    name = 'Stadión';
+    name = 'Televizní studio';
     cost = 7;
     description = 'Dostanete 5 mincí od zvoleného soupeře';
     symbol = CardSymbol.Tower;
+    color = CardColor.Purple;
     triggerNumbers = [6];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = true;
@@ -148,6 +156,7 @@ export class OfficeBuilding implements Card {
     cost = 8;
     description = 'Můžete vyměnit jednu svoji kartu objektu za soupeřovu (nelze měnit Věže)';
     symbol = CardSymbol.Tower;
+    color = CardColor.Purple;
     triggerNumbers = [6];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = true;
@@ -168,6 +177,7 @@ export class DairyShop implements Card {
     cost = 5;
     description = 'Za každý svůj objekt Prase si vezměte 3 mince z banku';
     symbol = CardSymbol.Factory;
+    color = CardColor.Green;
     triggerNumbers = [7];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = true;
@@ -185,6 +195,7 @@ export class FurnitureFactory implements Card {
     cost = 3;
     description = 'Za každý svůj objekt Kolečko si vezměte 3 mince z banku';
     symbol = CardSymbol.Factory;
+    color = CardColor.Green;
     triggerNumbers = [8];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = true;
@@ -202,6 +213,7 @@ export class Mine implements Card {
     cost = 6;
     description = 'Vezměte si 5 mincí z banku';
     symbol = CardSymbol.Cog;
+    color = CardColor.Blue;
     triggerNumbers = [9];
     canBeTriggeredByOthers = true;
     canBeTriggeredBySelf = true;
@@ -218,6 +230,7 @@ export class ApplePark implements Card {
     cost = 3;
     description = 'Vezměte si 3 mince z banku';
     symbol = CardSymbol.Wheat;
+    color = CardColor.Blue;
     triggerNumbers = [10];
     canBeTriggeredByOthers = true;
     canBeTriggeredBySelf = true;
@@ -234,6 +247,7 @@ export class Restaurant implements Card {
     cost = 3;
     description = 'Dostanete 2 minci od hráče na tahu';
     symbol = CardSymbol.Coffee;
+    color = CardColor.Red;
     triggerNumbers = [9, 10];
     canBeTriggeredByOthers = true;
     canBeTriggeredBySelf = false;
@@ -256,6 +270,7 @@ export class Mall implements Card {
     cost = 2;
     description = 'Za každý svůj objekt Obilí si vezměte 2 mince z banku';
     symbol = CardSymbol.Other;
+    color = CardColor.Green;
     triggerNumbers = [11, 12];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = true;
@@ -276,6 +291,7 @@ export class Station implements Card {
 
     // irrelevant but necessary for typecheck
     symbol = CardSymbol.Tower;
+    color = CardColor.Dominant;
     triggerNumbers = [];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = false;
@@ -291,6 +307,7 @@ export class ShoppingCenter implements Card {
 
     // irrelevant but necessary for typecheck
     symbol = CardSymbol.Tower;
+    color = CardColor.Dominant;
     triggerNumbers = [];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = false;
@@ -306,6 +323,7 @@ export class AmusementPark implements Card {
 
     // irrelevant but necessary for typecheck
     symbol = CardSymbol.Tower;
+    color = CardColor.Dominant;
     triggerNumbers = [];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = false;
@@ -321,6 +339,7 @@ export class Transmitter implements Card {
 
     // irrelevant but necessary for typecheck
     symbol = CardSymbol.Tower;
+    color = CardColor.Dominant;
     triggerNumbers = [];
     canBeTriggeredByOthers = false;
     canBeTriggeredBySelf = false;

@@ -1,5 +1,13 @@
 import { GameHandler } from '@app/classes/gameHandler';
 
+export enum CardColor {
+    Green,
+    Blue,
+    Red,
+    Purple,
+    Dominant
+}
+
 export enum CardSymbol {
     Wheat, // Psenicne pole, Jablonovy sad
     Toast, // Pekarna, Samoobsluha
@@ -39,6 +47,7 @@ export interface Card {
     name: string;
     triggerNumbers: number[];
     symbol: CardSymbol;
+    color: CardColor;
     cost: number;
     description: string;
     canBeTriggeredByOthers: boolean;
