@@ -20,10 +20,25 @@ export const events = {
     game: {
         namespaceName: 'game',
         input: {
-            PLAYER_CONNECT: 'playerConnect'
+            PLAYER_CONNECT: 'playerConnect',
+            DICE_ROLL: 'diceRoll', // beginning of the turn
+            END_ROLL: 'endRoll',
+            BUY_CARD: 'buyCard',
+            END_TURN: 'endTurn'
         },
         output: {
-            GAME_STARTING: 'gameStarting'
+            GAME_DATA_LOAD: 'gameDataLoad',
+            GAME_STARTING: 'gameStarting',
+            DICE_ROLL_OUTPUT: 'diceRollOutput',
+            FINAL_DICE_ROLL: 'finalDiceRoll',
+            RED_CARD_EFFECTS: 'redCardEffects',
+            BLUE_CARD_EFFECTS: 'blueCardEffects',
+            GREEN_CARD_EFFECTS: 'greenCardEffects',
+            BUILDING_POSSIBLE: 'buildingPossible',
+            PLAYER_BOUGHT_CARD: 'playerBoughtCard',
+            AIRPORT_GAIN: 'airportGain',
+            NEW_TURN: 'newTurn',
+            AMUSEMENT_PARK_NEW_TURN: 'newTurnAmusement'
         }
     }
 };

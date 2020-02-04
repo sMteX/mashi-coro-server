@@ -12,9 +12,10 @@ import { Repository } from 'typeorm';
 import { Game } from '@app/database/entities/game.entity';
 import { events as eventConstants } from '@utils/constants';
 import { GameHandler } from '@app/classes/gameHandler';
-import { PlayerConnect } from '@utils/interfaces/events/game/input.interface';
+import { BuyCard, EndRoll, EndTurn, PlayerConnect, RollDice } from '@utils/interfaces/events/game/input.interface';
 
 const { game: events } = eventConstants;
+const DEFAULT_DELAY: number = 1000;
 
 @WebSocketGateway({ namespace: events.namespaceName })
 export class GameGateway implements OnGatewayDisconnect {
@@ -72,11 +73,141 @@ export class GameGateway implements OnGatewayDisconnect {
 
             // emit starting data to the room - players (names, cards, money), buyable cards, game bank etc. - to setup the client UI
             const gameStartingData = this.h(data.game).constructInitialData();
-            this.server.in(data.game).emit(events.output.GAME_STARTING, gameStartingData);
+            this.server.in(data.game).emit(events.output.GAME_DATA_LOAD, gameStartingData);
 
-            // setTimeout(() => {
-            //     // actually start the game in GameHandler - pick a player, allow them to play, block the others
-            // }, 500);
+            setTimeout(() => {
+                // actually start the game in GameHandler - pick a player, allow them to play, block the others
+                // TODO: start game in GameHandler
+                this.server.in(data.game).emit(events.output.GAME_STARTING);
+            }, DEFAULT_DELAY);
+        }
+    }
+
+    @SubscribeMessage(events.input.DICE_ROLL)
+    async diceRoll(@MessageBody() data: RollDice,
+                   @ConnectedSocket() client: Socket): Promise<void> {
+        // TODO: generate N numbers, send them to all players
+        this.server.in(data.game).emit(events.output.DICE_ROLL_OUTPUT, {
+            player: data.playerId,
+            dice: [2, 3],
+            sum: 5
+        });
+    }
+
+    @SubscribeMessage(events.input.END_ROLL)
+    async endRollAndTriggerCards(@MessageBody() data: EndRoll,
+                                 @ConnectedSocket() client: Socket): Promise<void> {
+        this.server.in(data.game).emit(events.output.FINAL_DICE_ROLL, {
+            player: data.playerId,
+            dice: [2, 3],
+            sum: 5
+        });
+        setTimeout(() => {
+            // TODO: check red cards of all other players
+            // in here, others get coins from current player, so redGains contains how many coins OTHERS get from current player
+            // beware - it's a string in a key
+            // [playerId]: coins
+            const redGains = {
+                [0]: 2,
+                [1]: 3
+                // ...
+            };
+            // new money state of all players
+            const newMoney = {
+                [0]: 2,
+                [1]: 3
+                // ...
+            };
+            this.server.in(data.game).emit(events.output.RED_CARD_EFFECTS, {
+                newMoney,
+                gains: redGains,
+                fromPlayer: data.playerId
+            });
+
+            setTimeout(() => {
+                // TODO: check blue cards
+                // now each player gets their own money, no stealing
+                // [playerId]: coins
+                const blueGains = {
+                    [0]: 2,
+                    [1]: 3
+                    // ...
+                };
+                // new money state of all players
+                const newMoney = {
+                    [0]: 2,
+                    [1]: 3
+                    // ...
+                };
+                this.server.in(data.game).emit(events.output.BLUE_CARD_EFFECTS, {
+                    newMoney,
+                    gains: blueGains
+                });
+                setTimeout(() => {
+                    // TODO: check green cards
+                    // now only current player gets coins
+                    this.server.in(data.game).emit(events.output.GREEN_CARD_EFFECTS, {
+                        player: data.playerId,
+                        newMoney: 15,
+                        gains: 7
+                    });
+
+                    setTimeout(() => {
+                        // TODO: check for Town Hall
+                        this.server.to(`${client.id}`).emit(events.output.BUILDING_POSSIBLE);
+                    }, DEFAULT_DELAY);
+                }, DEFAULT_DELAY);
+            }, DEFAULT_DELAY);
+        }, DEFAULT_DELAY);
+    }
+
+    @SubscribeMessage(events.input.BUY_CARD)
+    async buyCard(@MessageBody() data: BuyCard,
+                  @ConnectedSocket() client: Socket): Promise<void> {
+        // TODO: handle buying
+        this.server.in(data.game).emit(events.output.PLAYER_BOUGHT_CARD, {
+            player: data.playerId,
+            card: data.card
+        });
+    }
+
+    @SubscribeMessage(events.input.END_TURN)
+    async endTurn(@MessageBody() data: EndTurn,
+                  @ConnectedSocket() client: Socket): Promise<void> {
+
+        // TODO: check for Airport, Amusement Park
+        // TODO: set current player
+        const eligibleForAirport = true;
+        const eligibleForAmusementPark = true;
+        const newPlayerId = 5;
+
+        const triggerNewTurn = () =>
+            this.server.in(data.game).emit(events.output.NEW_TURN, {
+                oldPlayer: data.playerId,
+                newPlayer: newPlayerId
+            });
+        const triggerAmusementPark = () =>
+            this.server.in(data.game).emit(events.output.AMUSEMENT_PARK_NEW_TURN, {
+                player: data.playerId
+            });
+        const triggerAirportGain = () =>
+            this.server.in(data.game).emit(events.output.AIRPORT_GAIN, {
+                player: data.playerId
+            });
+
+        if (eligibleForAirport) {
+            triggerAirportGain();
+            setTimeout(() => {
+                if (eligibleForAmusementPark) {
+                    triggerAmusementPark();
+                } else {
+                    triggerNewTurn();
+                }
+            }, DEFAULT_DELAY);
+        } else if (eligibleForAmusementPark) {
+            triggerAmusementPark();
+        } else {
+            triggerNewTurn();
         }
     }
 

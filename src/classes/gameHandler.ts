@@ -110,11 +110,13 @@ export class GameHandler {
             new Station(), new ShoppingCenter(), new AmusementPark(), new Transmitter()
         ];
         const bank = this.gameData.bank;
+        const startingPlayerId = this.game.players[Math.floor(Math.random() * this.game.players.length)].id;
         return {
             players,
             buyableCards,
             winningCards,
-            bank
+            bank,
+            startingPlayerId
         };
     }
 }
