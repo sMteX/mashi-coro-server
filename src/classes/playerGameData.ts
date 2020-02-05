@@ -1,60 +1,63 @@
-import * as Cards from './cards';
-// tslint:disable-next-line:no-duplicate-imports
 import {
-    AmusementPark,
-    Bakery, Card,
-    CardSymbol,
-    ShoppingCenter,
-    Station,
-    Transmitter,
-    WheatField
+    bakery, wheatField,
+    dominants,
+    cardMap,
+    Card, CardName, CardSymbol
 } from './cards';
 
 export class PlayerGameData {
     money: number;
-    cards: { [card: string]: number};
+    cards: { [card in CardName]?: number};
 
     constructor() {
         this.money = 3;
         this.cards = {};
-        this.addCard(WheatField);
-        this.addCard(Bakery);
+        this.addCard(wheatField);
+        this.addCard(bakery);
     }
 
     doesWin(): boolean {
-        return [Station, ShoppingCenter, AmusementPark, Transmitter].every(card => this.hasCard(card));
+        return dominants.map(card => card.cardName).every(name => this.hasCard(name));
     }
 
-    // ugly syntax just so we can use it nicely
-    hasCard<T extends Card>(card: new () => T): boolean {
-        return this.cards[card.name] !== undefined;
+    private getName(card: Card|CardName): CardName {
+        return typeof card === 'object' ? card.cardName : card;
     }
 
-    addCard<T extends Card>(card: new () => T): void {
-        if (this.cards[card.name] !== undefined) {
-            this.cards[card.name] += 1;
+    hasCard(card: Card|CardName): boolean {
+        return this.cards[this.getName(card)] !== undefined;
+    }
+
+    addCard(card: Card|CardName): void {
+        const name = this.getName(card);
+        if (this.cards[name] !== undefined) {
+            this.cards[name] += 1;
         } else {
-            this.cards[card.name] = 1;
+            this.cards[name] = 1;
         }
     }
 
-    removeCard<T extends Card>(card: new () => T): void {
+    removeCard(card: Card|CardName): void {
         // assume we have the card
-        if (this.cards[card.name] === 1) {
-            delete this.cards[card.name];
+        const name = this.getName(card);
+        if (this.cards[name] === 1) {
+            delete this.cards[name];
         } else {
-            this.cards[card.name] -= 1;
+            this.cards[name] -= 1;
         }
     }
 
-    cardCount<T extends Card>(card: new () => T): number {
-        return this.cards[card.name] || 0;
+    cardCount(card: Card|CardName): number {
+        const name = this.getName(card);
+        return this.cards[name] || 0;
     }
 
     symbolCount(symbol: CardSymbol): number {
         let symCount = 0;
+        // this.cards is keyed with values from CardName, but forEach returns string keys
+        // enum = number = number string => other way around it's Number(key) as enum
         Object.entries(this.cards).forEach(([cardName, count]) => {
-            const card: Card = new Cards[cardName]();
+            const card: Card = cardMap[Number(cardName) as CardName];
             if (card.symbol === symbol) {
                 symCount += count;
             }

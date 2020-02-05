@@ -10,7 +10,7 @@ export enum CardColor {
 
 export enum CardSymbol {
     Wheat, // Psenicne pole, Jablonovy sad
-    Toast, // Pekarna, Samoobsluha
+    Box, // Pekarna, Samoobsluha
     Pig, // Statek
     Coffee, // Kavarna, Restaurace
     Cog, // Les, Dul

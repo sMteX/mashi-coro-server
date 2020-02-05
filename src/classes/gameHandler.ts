@@ -2,11 +2,9 @@ import { Server, Socket } from 'socket.io';
 import { Game } from '@app/database/entities/game.entity';
 import { PlayerGameData } from './playerGameData';
 import {
-    Card,
-    WheatField, Farm, Bakery, CoffeeShop, Shop,
-    Forest, Stadium, TelevisionStudio, OfficeBuilding, DairyShop,
-    FurnitureFactory, Mine, ApplePark, Restaurant, Mall,
-    Station, ShoppingCenter, AmusementPark, Transmitter
+    wheatField, farm, bakery, coffeeShop, shop, forest,
+    stadium, televisionStudio, officeBuilding, dairyShop,
+    furnitureFactory, mine, applePark, restaurant, mall, dominants, CardName
 } from './cards';
 
 class GameData {
@@ -27,8 +25,8 @@ export class GameHandler {
     gameData: GameData;
 
     targetPlayer: PlayerGameData;    // some cards require targeting a player
-    swapCardOwn: new () => Card;    // Office building card swaps cards, use these 2 properties to refer to the card types
-    swapCardTarget: new () => Card;
+    swapCardOwn: CardName;    // Office building card swaps cards, use these 2 properties to refer to the card types
+    swapCardTarget: CardName;
 
     constructor(game: Game, server: Server, socketIdMap: { [socketId: string]: number }) {
         this.game = game;
@@ -63,7 +61,7 @@ export class GameHandler {
         this.targetPlayer = this.playerData[id];
     }
 
-    setCardSwap<O extends Card, T extends Card >(own: new () => O, target: new () => T) {
+    setCardSwap(own: CardName, target: CardName) {
         this.swapCardOwn = own;
         this.swapCardTarget = target;
     }
@@ -84,30 +82,30 @@ export class GameHandler {
             socketId: idSocketMap[player.id],
             name: player.name,
             cards: [
-                { card: new WheatField(), count: 1 },
-                { card: new Bakery(), count: 1 }
+                { card: wheatField, count: 1 },
+                { card: bakery, count: 1 }
             ],
             money: 3
         }));
         const buyableCards = [
-            { card: new WheatField(), count: 6 },
-            { card: new Farm(), count: 6 },
-            { card: new Bakery(), count: 6 },
-            { card: new CoffeeShop(), count: 6 },
-            { card: new Shop(), count: 6 },
-            { card: new Forest(), count: 6 },
-            { card: new Stadium(), count: 4 },
-            { card: new TelevisionStudio(), count: 4 },
-            { card: new OfficeBuilding(), count: 4 },
-            { card: new DairyShop(), count: 6 },
-            { card: new FurnitureFactory(), count: 6 },
-            { card: new Mine(), count: 6 },
-            { card: new ApplePark(), count: 6 },
-            { card: new Restaurant(), count: 6 },
-            { card: new Mall(), count: 6 }
+            { card: wheatField, count: 6 },
+            { card: farm, count: 6 },
+            { card: bakery, count: 6 },
+            { card: coffeeShop, count: 6 },
+            { card: shop, count: 6 },
+            { card: forest, count: 6 },
+            { card: stadium, count: 4 },
+            { card: televisionStudio, count: 4 },
+            { card: officeBuilding, count: 4 },
+            { card: dairyShop, count: 6 },
+            { card: furnitureFactory, count: 6 },
+            { card: mine, count: 6 },
+            { card: applePark, count: 6 },
+            { card: restaurant, count: 6 },
+            { card: mall, count: 6 }
         ];
         const winningCards = [
-            new Station(), new ShoppingCenter(), new AmusementPark(), new Transmitter()
+            ...dominants
         ];
         const bank = this.gameData.bank;
         const startingPlayerId = this.game.players[Math.floor(Math.random() * this.game.players.length)].id;
