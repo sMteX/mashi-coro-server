@@ -77,6 +77,17 @@ export class GameHandler {
         return this.playerIds[next];
     }
 
+    get winner(): number|undefined {
+        let winnerId: number;
+        Object.entries(this.playerData).forEach(([id, data]) => {
+            if (data.doesWin()) {
+                winnerId = Number(id);
+                return;
+            }
+        });
+        return winnerId;
+    }
+
     setTargetPlayer(id: number) {
         this.targetPlayer = this.playerData[id];
     }

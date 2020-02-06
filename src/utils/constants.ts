@@ -39,7 +39,8 @@ export const events = {
             AIRPORT_GAIN: 'airportGain',
             NEW_TURN: 'newTurn',
             AMUSEMENT_PARK_NEW_TURN: 'newTurnAmusement',
-            PLAYER_LEFT_GAME: 'playerLeftGame'
+            PLAYER_LEFT_GAME: 'playerLeftGame',
+            PLAYER_WON_GAME: 'playerWonGame'
         }
     }
 };

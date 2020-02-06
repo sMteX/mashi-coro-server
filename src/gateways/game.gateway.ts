@@ -186,7 +186,15 @@ export class GameGateway implements OnGatewayDisconnect {
                   @ConnectedSocket() client: Socket): Promise<void> {
         // add card to player, remove from the table, subtract money (and add to bank)
         this.h(data.game).buyCard(data.playerId, data.card);
-        // TODO: check for game end conditions (if any of the player has all dominants)
+        // does this really return undefined if we don't have a winner? it should...
+        const winner = this.h(data.game).winner;
+        if (winner !== undefined) {
+            this.server.in(data.game).emit(events.output.PLAYER_WON_GAME, {
+                playerId: winner
+            });
+            // TODO: end somehow
+            return;
+        }
         this.server.in(data.game).emit(events.output.PLAYER_BOUGHT_CARD, {
             player: data.playerId,
             card: data.card
