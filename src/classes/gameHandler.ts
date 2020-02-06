@@ -20,11 +20,12 @@ class GameData {
 
 export class GameHandler {
     server: Server;
-    currentPlayerSocket!: Socket;
+    // currentPlayerSocket!: Socket;
     game: Game;
 
     socketIdMap: { [socket: string]: number } = {};
     playerData: { [id: number]: PlayerGameData } = {};
+    playerIds: number[];
     gameData: GameData;
 
     targetPlayer: PlayerGameData;    // some cards require targeting a player
@@ -42,6 +43,7 @@ export class GameHandler {
         this.server = server;
         this.gameData = new GameData(game.players.length);
         this.game.players.forEach((p) => {
+            this.playerIds.push(p.id);
             this.playerData[p.id] = new PlayerGameData();
         });
         this.socketIdMap = socketIdMap;
@@ -56,14 +58,23 @@ export class GameHandler {
     }
 
     get otherPlayers(): PlayerGameData[] {
-        const currentId = this.currentPlayerId;
         return Object.entries(this.playerData)
-            .filter(([id]) => Number(id) !== currentId)
+            .filter(([id]) => Number(id) !== this.currentPlayerId)
             .map(([, data]) => data);
     }
 
-    setCurrentPlayer(player: Socket) {
-        this.currentPlayerSocket = player;
+    setCurrentPlayer(player: number) {
+        this.currentPlayerId = player;
+    }
+
+    get nextPlayerId(): number {
+        // get array index of current player, return id of next player
+        const currentPlayerIndex = this.playerIds.indexOf(this.currentPlayerId);
+        const next = currentPlayerIndex + 1;
+        if (next === this.playerIds.length) {
+            return this.playerIds[0];
+        }
+        return this.playerIds[next];
     }
 
     setTargetPlayer(id: number) {
@@ -163,7 +174,7 @@ export class GameHandler {
             ...dominants
         ];
         const bank = this.gameData.bank;
-        const startingPlayerId = this.game.players[Math.floor(Math.random() * this.game.players.length)].id;
+        const startingPlayerId = this.playerIds[Math.floor(Math.random() * this.game.players.length)];
         this.currentPlayerId = startingPlayerId;
         return {
             players,

@@ -4,7 +4,7 @@ import {
     OnGatewayDisconnect,
     SubscribeMessage,
     WebSocketGateway,
-    WebSocketServer
+    WebSocketServer,
 } from '@nestjs/websockets';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Server, Socket } from 'socket.io';
@@ -13,6 +13,8 @@ import { Game } from '@app/database/entities/game.entity';
 import { events as eventConstants } from '@utils/constants';
 import { GameHandler } from '@app/classes/gameHandler';
 import { BuyCard, EndRoll, EndTurn, PlayerConnect, RollDice } from '@utils/interfaces/events/game/input.interface';
+import { CardName } from '@app/classes/cards';
+import has = Reflect.has;
 
 const { game: events } = eventConstants;
 const DEFAULT_DELAY: number = 1000;
@@ -179,36 +181,43 @@ export class GameGateway implements OnGatewayDisconnect {
     async endTurn(@MessageBody() data: EndTurn,
                   @ConnectedSocket() client: Socket): Promise<void> {
 
-        // TODO: check for Airport, Amusement Park
-        // TODO: set current player
-        const eligibleForAirport = true;
-        const eligibleForAmusementPark = true;
-        const newPlayerId = 5;
+        const game = this.h(data.game);
+        const hasAmusementPark = game.currentPlayer.cards.hasCard(CardName.AmusementPark);
+        const latestDice = game.mostRecentRoll.dice;
+        const sameDice = latestDice.length === 2 && latestDice[0] === latestDice[1];
 
-        const triggerNewTurn = () =>
+        // TODO: check for Airport
+        // const eligibleForAirport = false;
+        const eligibleForAmusementPark = hasAmusementPark && sameDice;
+        const newPlayerId = game.nextPlayerId;
+
+        const triggerNewTurn = () => {
+            game.setCurrentPlayer(newPlayerId);
             this.server.in(data.game).emit(events.output.NEW_TURN, {
                 oldPlayer: data.playerId,
                 newPlayer: newPlayerId
             });
+        };
         const triggerAmusementPark = () =>
             this.server.in(data.game).emit(events.output.AMUSEMENT_PARK_NEW_TURN, {
                 player: data.playerId
             });
-        const triggerAirportGain = () =>
-            this.server.in(data.game).emit(events.output.AIRPORT_GAIN, {
-                player: data.playerId
-            });
+        // const triggerAirportGain = () =>
+        //     this.server.in(data.game).emit(events.output.AIRPORT_GAIN, {
+        //         player: data.playerId
+        //     });
 
-        if (eligibleForAirport) {
-            triggerAirportGain();
-            setTimeout(() => {
-                if (eligibleForAmusementPark) {
-                    triggerAmusementPark();
-                } else {
-                    triggerNewTurn();
-                }
-            }, DEFAULT_DELAY);
-        } else if (eligibleForAmusementPark) {
+        // if (eligibleForAirport) {
+        //     triggerAirportGain();
+        //     setTimeout(() => {
+        //         if (eligibleForAmusementPark) {
+        //             triggerAmusementPark();
+        //         } else {
+        //             triggerNewTurn();
+        //         }
+        //     }, DEFAULT_DELAY);
+        // } else
+        if (eligibleForAmusementPark) {
             triggerAmusementPark();
         } else {
             triggerNewTurn();
