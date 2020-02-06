@@ -14,9 +14,12 @@ import { events as eventConstants } from '@utils/constants';
 import { GameHandler } from '@app/classes/gameHandler';
 import { BuyCard, EndRoll, EndTurn, PlayerConnect, RollDice } from '@utils/interfaces/events/game/input.interface';
 import { CardName } from '@app/classes/cards';
-import has = Reflect.has;
 
 const { game: events } = eventConstants;
+interface GamePair {
+    game: Game;
+    handler: GameHandler;
+}
 const DEFAULT_DELAY: number = 1000;
 
 @WebSocketGateway({ namespace: events.namespaceName })
@@ -30,16 +33,28 @@ export class GameGateway implements OnGatewayDisconnect {
 
     private socketIdMap: { [socketId: string]: number } = {};
     private games: {
-        [gameSlug: string]: {
-            game: Game,
-            handler: GameHandler
-        }
+        [gameSlug: string]: GamePair
     } = {};
 
-    handleDisconnect(client: Socket): void {
-        // TODO: remove from game, if 1 player remains = close game
-        // TODO: send event that player left game
+    async handleDisconnect(client: Socket): Promise<void> {
+        const playerId = this.socketIdMap[client.id];
         delete this.socketIdMap[client.id];
+        // find a game, where given player was
+        const [gameSlug, pair] = Object.entries(this.games).find(([, { handler }]) => handler.playerIds.includes(playerId));
+        // const pair: GamePair = Object.values(this.games).find(({ handler }) => handler.playerIds.includes(playerId));
+        pair.game.players = pair.game.players.filter(p => p.id === playerId);
+        // will this work? or need to inject playerRepository?
+        await this.gameRepository.save(pair.game);
+
+        if (pair.game.players.length >= 2) {
+            // send event
+            client.in(gameSlug).emit(events.output.PLAYER_LEFT_GAME, {
+                playerId
+            });
+        } else {
+            // end game
+        }
+        client.leave(gameSlug);
     }
 
     /*
@@ -171,6 +186,7 @@ export class GameGateway implements OnGatewayDisconnect {
                   @ConnectedSocket() client: Socket): Promise<void> {
         // add card to player, remove from the table, subtract money (and add to bank)
         this.h(data.game).buyCard(data.playerId, data.card);
+        // TODO: check for game end conditions (if any of the player has all dominants)
         this.server.in(data.game).emit(events.output.PLAYER_BOUGHT_CARD, {
             player: data.playerId,
             card: data.card
