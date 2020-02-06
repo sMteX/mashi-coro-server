@@ -99,14 +99,16 @@ export class GameHandler {
     }
 
     triggerRedCards() {
-        this.otherPlayers.forEach((player) => {
+        const players = this.otherPlayers;
+        // TODO: implement triggering in opposite direction
+        players.forEach((player) => {
             Object.entries(player.cards.cards).forEach(([cardName, count]) => {
                 const card: Card = cardMap[cardName];
                 if (card.color !== CardColor.Red || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                     return;
                 }
                 for (let i = 0; i < count; i += 1) {
-                    card.trigger(this);
+                    card.trigger(player, this);
                 }
             });
         });
@@ -121,7 +123,7 @@ export class GameHandler {
                     return;
                 }
                 for (let i = 0; i < count; i += 1) {
-                    card.trigger(this);
+                    card.trigger(player, this);
                 }
             });
         });
@@ -129,13 +131,14 @@ export class GameHandler {
 
     triggerGreenCards() {
         // for each card player has (excluding dominants), call the card's trigger()
-        Object.entries(this.currentPlayer.cards.cards).forEach(([cardName, count]) => {
+        const player = this.currentPlayer;
+        Object.entries(player.cards.cards).forEach(([cardName, count]) => {
             const card: Card = cardMap[cardName];
             if (card.color !== CardColor.Green || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                 return;
             }
             for (let i = 0; i < count; i += 1) {
-                card.trigger(this);
+                card.trigger(player, this);
             }
         });
     }

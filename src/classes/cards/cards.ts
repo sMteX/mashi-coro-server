@@ -10,8 +10,8 @@ export const wheatField: Card = {
     color: CardColor.Blue,
     triggerNumbers: [1],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        currentPlayer.money += 1;
+    trigger (owner, { gameData }) {
+        owner.money += 1;
         gameData.bank -= 1;
     }
 };
@@ -25,8 +25,8 @@ export const farm: Card = {
     color: CardColor.Blue,
     triggerNumbers: [2],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        currentPlayer.money += 1;
+    trigger (owner, { gameData }) {
+        owner.money += 1;
         gameData.bank -= 1;
     }
 };
@@ -40,9 +40,9 @@ export const bakery: Card = {
     color: CardColor.Green,
     triggerNumbers: [2, 3],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        const amount = currentPlayer.cards.hasCard(CardName.ShoppingCenter) ? 2 : 1;
-        currentPlayer.money += amount;
+    trigger (owner, { gameData }) {
+        const amount = owner.cards.hasCard(CardName.ShoppingCenter) ? 2 : 1;
+        owner.money += amount;
         gameData.bank -= amount;
     }
 };
@@ -56,15 +56,11 @@ export const coffeeShop: Card = {
     color: CardColor.Red,
     triggerNumbers: [3],
 
-    trigger ({ currentPlayer, otherPlayers }: GameHandler) {
-        otherPlayers.forEach((player) => {
-            for (let i = 0; i < player.cards.cardCount(CardName.CoffeeShop); i += 1) {
-                // TODO: current player gives away money CLOCKWISE to other players, if he can
-                const amount = player.cards.hasCard(CardName.ShoppingCenter) ? 2 : 1;
-                currentPlayer.money -= amount;
-                player.money += amount;
-            }
-        });
+    trigger (owner, { currentPlayer }) {
+        const amount = owner.cards.hasCard(CardName.ShoppingCenter) ? 2 : 1;
+        const realAmount = Math.min(amount, currentPlayer.money);
+        currentPlayer.money -= realAmount;
+        owner.money += realAmount;
     }
 };
 
@@ -77,9 +73,9 @@ export const shop: Card = {
     color: CardColor.Green,
     triggerNumbers: [4],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        const amount = currentPlayer.cards.hasCard(CardName.ShoppingCenter) ? 4 : 3;
-        currentPlayer.money += amount;
+    trigger (owner, { gameData }) {
+        const amount = owner.cards.hasCard(CardName.ShoppingCenter) ? 4 : 3;
+        owner.money += amount;
         gameData.bank -= amount;
     }
 };
@@ -93,8 +89,8 @@ export const forest: Card = {
     color: CardColor.Blue,
     triggerNumbers: [5],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        currentPlayer.money += 1;
+    trigger (owner, { gameData }) {
+        owner.money += 1;
         gameData.bank -= 1;
     }
 };
@@ -109,15 +105,16 @@ export const stadium: Card = {
     color: CardColor.Purple,
     triggerNumbers: [6],
 
-    trigger ({ currentPlayer, otherPlayers }: GameHandler) {
+    trigger (owner, { otherPlayers }) {
         otherPlayers.forEach((player) => {
-            // TODO: don't go to negative money
-            player.money -= 2;
-            currentPlayer.money += 2;
+            const amount = Math.min(2, player.money);
+            player.money -= amount;
+            owner.money += amount;
         });
     }
 };
-
+// TODO: these two require special communication - choosing target player
+//  works now, but we need something more general for other cards too
 export const televisionStudio: Card = {
     cardName: CardName.TelevisionStudio,
     name: 'Televizní studio',
@@ -127,10 +124,10 @@ export const televisionStudio: Card = {
     color: CardColor.Purple,
     triggerNumbers: [6],
 
-    trigger ({ currentPlayer, targetPlayer }: GameHandler) {
-        // TODO: don't go to negative money
-        targetPlayer.money -= 5;
-        currentPlayer.money += 5;
+    trigger (owner, { targetPlayer }) {
+        const amount = Math.min(5, targetPlayer.money);
+        targetPlayer.money -= amount;
+        owner.money += amount;
     }
 };
 
@@ -143,13 +140,13 @@ export const officeBuilding: Card = {
     color: CardColor.Purple,
     triggerNumbers: [6],
 
-    trigger ({ currentPlayer, targetPlayer, swapCardOwn, swapCardTarget }: GameHandler) {
+    trigger (owner, { targetPlayer, swapCardOwn, swapCardTarget }) {
         // assume we have the card and the target has the card too
-        currentPlayer.cards.removeCard(swapCardOwn);
+        owner.cards.removeCard(swapCardOwn);
         targetPlayer.cards.addCard(swapCardOwn);
 
         targetPlayer.cards.removeCard(swapCardTarget);
-        currentPlayer.cards.addCard(swapCardTarget);
+        owner.cards.addCard(swapCardTarget);
     }
 };
 //
@@ -162,9 +159,9 @@ export const dairyShop: Card = {
     color: CardColor.Green,
     triggerNumbers: [7],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        const symbolCount = currentPlayer.cards.symbolCount(CardSymbol.Pig);
-        currentPlayer.money += symbolCount * 3;
+    trigger (owner, { gameData }) {
+        const symbolCount = owner.cards.symbolCount(CardSymbol.Pig);
+        owner.money += symbolCount * 3;
         gameData.bank -= symbolCount * 3;
     }
 };
@@ -178,9 +175,9 @@ export const furnitureFactory: Card = {
     color: CardColor.Green,
     triggerNumbers: [8],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        const symbolCount = currentPlayer.cards.symbolCount(CardSymbol.Cog);
-        currentPlayer.money += symbolCount * 3;
+    trigger (owner, { gameData }) {
+        const symbolCount = owner.cards.symbolCount(CardSymbol.Cog);
+        owner.money += symbolCount * 3;
         gameData.bank -= symbolCount * 3;
     }
 };
@@ -194,8 +191,8 @@ export const mine: Card = {
     color: CardColor.Blue,
     triggerNumbers: [9],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        currentPlayer.money += 5;
+    trigger (owner, { gameData }) {
+        owner.money += 5;
         gameData.bank -= 5;
     }
 };
@@ -209,8 +206,8 @@ export const applePark: Card = {
     color: CardColor.Blue,
     triggerNumbers: [10],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        currentPlayer.money += 3;
+    trigger (owner, { gameData }) {
+        owner.money += 3;
         gameData.bank -= 3;
     }
 };
@@ -224,15 +221,11 @@ export const restaurant: Card = {
     color: CardColor.Red,
     triggerNumbers: [9, 10],
 
-    trigger ({ currentPlayer, otherPlayers }: GameHandler) {
-        otherPlayers.forEach((player) => {
-            for (let i = 0; i < player.cards.cardCount(CardName.Restaurant); i += 1) {
-                // TODO: current player gives away money CLOCKWISE to other players, if he can
-                const amount = player.cards.hasCard(CardName.ShoppingCenter) ? 3 : 2;
-                currentPlayer.money -= amount;
-                player.money += amount;
-            }
-        });
+    trigger (owner, { currentPlayer }) {
+        const amount = owner.cards.hasCard(CardName.ShoppingCenter) ? 3 : 2;
+        const realAmount = Math.min(amount, currentPlayer.money);
+        currentPlayer.money -= realAmount;
+        owner.money += realAmount;
     }
 };
 
@@ -245,9 +238,9 @@ export const mall: Card = {
     color: CardColor.Green,
     triggerNumbers: [11, 12],
 
-    trigger ({ currentPlayer, gameData }: GameHandler) {
-        const symbolCount = currentPlayer.cards.symbolCount(CardSymbol.Wheat);
-        currentPlayer.money += symbolCount * 2;
+    trigger (owner, { gameData }) {
+        const symbolCount = owner.cards.symbolCount(CardSymbol.Wheat);
+        owner.money += symbolCount * 2;
         gameData.bank -= symbolCount * 2;
     }
 };
@@ -264,7 +257,7 @@ export const station: Card = {
     color: CardColor.Dominant,
     triggerNumbers: [],
 
-    trigger (handler: GameHandler) {}
+    trigger (owner, handler) {}
 };
 
 export const shoppingCenter: Card = {
@@ -278,7 +271,7 @@ export const shoppingCenter: Card = {
     color: CardColor.Dominant,
     triggerNumbers: [],
 
-    trigger (handler: GameHandler) {}
+    trigger (owner, handler) {}
 };
 
 export const amusementPark: Card = {
@@ -292,7 +285,7 @@ export const amusementPark: Card = {
     color: CardColor.Dominant,
     triggerNumbers: [],
 
-    trigger (handler: GameHandler) {}
+    trigger (owner, handler) {}
 };
 
 export const transmitter: Card = {
@@ -306,7 +299,7 @@ export const transmitter: Card = {
     color: CardColor.Dominant,
     triggerNumbers: [],
 
-    trigger (handler: GameHandler) {}
+    trigger (owner, handler) {}
 };
 
 export const cardMap: { [index in CardName]: Card } = {

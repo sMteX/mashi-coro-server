@@ -1,4 +1,5 @@
 import { GameHandler } from '@app/classes/gameHandler';
+import { PlayerGameData } from '@app/classes/playerGameData';
 
 export enum CardColor {
     Green,
@@ -51,5 +52,5 @@ export interface Card {
     cost: number;
     description: string;
     // reactive methods?
-    trigger: (handler: GameHandler) => void;
+    trigger: (owner: PlayerGameData, game: GameHandler) => void;
 }
