@@ -36,6 +36,7 @@ export class GameGateway implements OnGatewayDisconnect {
 
     handleDisconnect(client: Socket): void {
         // TODO: remove from game, if 1 player remains = close game
+        // TODO: send event that player left game
         delete this.socketIdMap[client.id];
     }
 
@@ -76,8 +77,7 @@ export class GameGateway implements OnGatewayDisconnect {
             this.server.in(data.game).emit(events.output.GAME_DATA_LOAD, gameStartingData);
 
             setTimeout(() => {
-                // actually start the game in GameHandler - pick a player, allow them to play, block the others
-                // TODO: start game in GameHandler
+                this.h(data.game).startGame();
                 this.server.in(data.game).emit(events.output.GAME_STARTING);
             }, DEFAULT_DELAY);
         }
@@ -86,21 +86,24 @@ export class GameGateway implements OnGatewayDisconnect {
     @SubscribeMessage(events.input.DICE_ROLL)
     async diceRoll(@MessageBody() data: RollDice,
                    @ConnectedSocket() client: Socket): Promise<void> {
-        // TODO: generate N numbers, send them to all players
+        // assume we can't call this in wrong situation - no checks for not having the specific cards
+        const dice = this.h(data.game).rollDice(data.diceCount);
         this.server.in(data.game).emit(events.output.DICE_ROLL_OUTPUT, {
+            dice,
             player: data.playerId,
-            dice: [2, 3],
-            sum: 5
+            sum: dice[0] + (dice.length > 1 ? dice[1] : 0),
+            transmitter: data.transmitter
         });
     }
 
     @SubscribeMessage(events.input.END_ROLL)
     async endRollAndTriggerCards(@MessageBody() data: EndRoll,
                                  @ConnectedSocket() client: Socket): Promise<void> {
+        const latestRoll = this.h(data.game).mostRecentRoll.dice;
         this.server.in(data.game).emit(events.output.FINAL_DICE_ROLL, {
             player: data.playerId,
-            dice: [2, 3],
-            sum: 5
+            dice: latestRoll,
+            sum: latestRoll[0] + (latestRoll.length > 1 ? latestRoll[1] : 0)
         });
         setTimeout(() => {
             // TODO: check red cards of all other players

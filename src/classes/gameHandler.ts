@@ -6,12 +6,15 @@ import {
     stadium, televisionStudio, officeBuilding, dairyShop,
     furnitureFactory, mine, applePark, restaurant, mall, dominants, CardName
 } from './cards';
+import { CardCollection } from '@app/classes/cardCollection';
 
 class GameData {
     bank: number;
+    cards: CardCollection;
 
     constructor(playerCount: number) {
         this.bank = 210 - playerCount * 3;
+        this.cards = new CardCollection();
     }
 }
 
@@ -28,6 +31,12 @@ export class GameHandler {
     swapCardOwn: CardName;    // Office building card swaps cards, use these 2 properties to refer to the card types
     swapCardTarget: CardName;
 
+    currentPlayerId: number;
+    mostRecentRoll: {
+        player: number;
+        dice: number[]
+    };
+
     constructor(game: Game, server: Server, socketIdMap: { [socketId: string]: number }) {
         this.game = game;
         this.server = server;
@@ -38,9 +47,9 @@ export class GameHandler {
         this.socketIdMap = socketIdMap;
     }
 
-    get currentPlayerId(): number {
-        return this.socketIdMap[this.currentPlayerSocket.id];
-    }
+    // get currentPlayerId(): number {
+    //     return this.socketIdMap[this.currentPlayerSocket.id];
+    // }
 
     get currentPlayer(): PlayerGameData {
         return this.playerData[this.currentPlayerId];
@@ -70,6 +79,41 @@ export class GameHandler {
         this.targetPlayer = null;
         this.swapCardTarget = null;
         this.swapCardOwn = null;
+    }
+
+    rollDice(amount: number): number[] {
+        const dice = [];
+        dice.push(Math.floor(Math.random() * 6) + 1);
+        if (amount === 2) {
+            dice.push(Math.floor(Math.random() * 6) + 1);
+        }
+        this.mostRecentRoll.player = this.currentPlayerId;
+        this.mostRecentRoll.dice = [...dice];
+        return dice;
+    }
+
+    startGame() {
+        // start the game - players are gathered, their money and cards are created/assigned in PlayerGameData constructor
+        // game bank is filled in GameHandler constructor
+        // starting player is generated and assigned in constructInitialData()
+        // what's left - create buyable cards
+        this.gameData.cards.addCards(
+            [wheatField, 6],
+            [farm, 6],
+            [bakery, 6],
+            [coffeeShop, 6],
+            [shop, 6],
+            [forest, 6],
+            [stadium, 4],
+            [televisionStudio, 4],
+            [officeBuilding, 4],
+            [dairyShop, 6],
+            [furnitureFactory, 6],
+            [mine, 6],
+            [applePark, 6],
+            [restaurant, 6],
+            [mall, 6]
+        );
     }
 
     constructInitialData() {
@@ -109,6 +153,7 @@ export class GameHandler {
         ];
         const bank = this.gameData.bank;
         const startingPlayerId = this.game.players[Math.floor(Math.random() * this.game.players.length)].id;
+        this.currentPlayerId = startingPlayerId;
         return {
             players,
             buyableCards,
