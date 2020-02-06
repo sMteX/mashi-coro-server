@@ -4,7 +4,7 @@ import { PlayerGameData } from './playerGameData';
 import {
     wheatField, farm, bakery, coffeeShop, shop, forest,
     stadium, televisionStudio, officeBuilding, dairyShop,
-    furnitureFactory, mine, applePark, restaurant, mall, dominants, CardName
+    furnitureFactory, mine, applePark, restaurant, mall, dominants, CardName, cardMap,
 } from './cards';
 import { CardCollection } from '@app/classes/cardCollection';
 
@@ -79,6 +79,17 @@ export class GameHandler {
         this.targetPlayer = null;
         this.swapCardTarget = null;
         this.swapCardOwn = null;
+    }
+
+    buyCard(playerId: number, card: CardName): void {
+        // on server, dominants are treated as regular cards, but they're not on the table
+        const cardObj = cardMap[card];
+        this.playerData[playerId].cards.addCard(card);
+        if (!dominants.map(c => c.cardName).includes(card)) {
+            this.gameData.cards.removeCard(card);
+        }
+        this.playerData[playerId].money -= cardObj.cost;
+        this.gameData.bank += cardObj.cost;
     }
 
     rollDice(amount: number): number[] {

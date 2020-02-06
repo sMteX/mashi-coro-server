@@ -167,7 +167,8 @@ export class GameGateway implements OnGatewayDisconnect {
     @SubscribeMessage(events.input.BUY_CARD)
     async buyCard(@MessageBody() data: BuyCard,
                   @ConnectedSocket() client: Socket): Promise<void> {
-        // TODO: handle buying
+        // add card to player, remove from the table, subtract money (and add to bank)
+        this.h(data.game).buyCard(data.playerId, data.card);
         this.server.in(data.game).emit(events.output.PLAYER_BOUGHT_CARD, {
             player: data.playerId,
             card: data.card
