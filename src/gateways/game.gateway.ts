@@ -4,7 +4,7 @@ import {
     OnGatewayDisconnect,
     SubscribeMessage,
     WebSocketGateway,
-    WebSocketServer,
+    WebSocketServer
 } from '@nestjs/websockets';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Server, Socket } from 'socket.io';
@@ -116,7 +116,8 @@ export class GameGateway implements OnGatewayDisconnect {
     @SubscribeMessage(events.input.END_ROLL)
     async endRollAndTriggerCards(@MessageBody() data: EndRoll,
                                  @ConnectedSocket() client: Socket): Promise<void> {
-        const latestRoll = this.h(data.game).mostRecentRoll.dice;
+        const game = this.h(data.game);
+        const latestRoll = game.mostRecentRoll.dice;
         this.server.in(data.game).emit(events.output.FINAL_DICE_ROLL, {
             player: data.playerId,
             dice: latestRoll,
@@ -124,56 +125,56 @@ export class GameGateway implements OnGatewayDisconnect {
         });
         setTimeout(() => {
             // TODO: check red cards of all other players
+            const beforeRed: { [p: number]: number } = game.currentPlayerMoneyMap;
+            game.triggerRedCards();
+            const afterRed: { [p: number]: number } = game.currentPlayerMoneyMap;
+
             // in here, others get coins from current player, so redGains contains how many coins OTHERS get from current player
-            // beware - it's a string in a key
             // [playerId]: coins
-            const redGains = {
-                [0]: 2,
-                [1]: 3
-                // ...
-            };
-            // new money state of all players
-            const newMoney = {
-                [0]: 2,
-                [1]: 3
-                // ...
-            };
+            const redGains = {};
+            Object.keys(afterRed).forEach((id: string) => {
+                if (Number(id) !== data.playerId) {
+                    // we only care about other player gains
+                    redGains[id] = afterRed[id] - beforeRed[id];
+                }
+            });
             this.server.in(data.game).emit(events.output.RED_CARD_EFFECTS, {
-                newMoney,
+                newMoney: afterRed,
                 gains: redGains,
                 fromPlayer: data.playerId
             });
 
             setTimeout(() => {
                 // TODO: check blue cards
+                const beforeBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
+                game.triggerBlueCards();
+                const afterBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
+
                 // now each player gets their own money, no stealing
                 // [playerId]: coins
-                const blueGains = {
-                    [0]: 2,
-                    [1]: 3
-                    // ...
-                };
-                // new money state of all players
-                const newMoney = {
-                    [0]: 2,
-                    [1]: 3
-                    // ...
-                };
+                const blueGains = {};
+                Object.keys(afterBlue).forEach((id: string) => {
+                    redGains[id] = afterBlue[id] - beforeBlue[id];
+                });
                 this.server.in(data.game).emit(events.output.BLUE_CARD_EFFECTS, {
-                    newMoney,
+                    newMoney: afterBlue,
                     gains: blueGains
                 });
                 setTimeout(() => {
                     // TODO: check green cards
                     // now only current player gets coins
+                    const beforeGreen = game.currentPlayer.money;
+                    game.triggerGreenCards();
+                    const afterGreen = game.currentPlayer.money;
                     this.server.in(data.game).emit(events.output.GREEN_CARD_EFFECTS, {
                         player: data.playerId,
-                        newMoney: 15,
-                        gains: 7
+                        newMoney: afterGreen,
+                        gains: afterGreen - beforeGreen
                     });
 
                     setTimeout(() => {
                         // TODO: check for Town Hall
+                        // TODO: trigger purple cards
                         this.server.to(`${client.id}`).emit(events.output.BUILDING_POSSIBLE);
                     }, DEFAULT_DELAY);
                 }, DEFAULT_DELAY);

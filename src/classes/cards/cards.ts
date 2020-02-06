@@ -9,8 +9,6 @@ export const wheatField: Card = {
     symbol: CardSymbol.Wheat,
     color: CardColor.Blue,
     triggerNumbers: [1],
-    canBeTriggeredByOthers: true,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
         currentPlayer.money += 1;
@@ -26,8 +24,6 @@ export const farm: Card = {
     symbol: CardSymbol.Pig,
     color: CardColor.Blue,
     triggerNumbers: [2],
-    canBeTriggeredByOthers: true,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
         currentPlayer.money += 1;
@@ -43,11 +39,9 @@ export const bakery: Card = {
     symbol: CardSymbol.Box,
     color: CardColor.Green,
     triggerNumbers: [2, 3],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
-        const amount = currentPlayer.hasCard(CardName.ShoppingCenter) ? 2 : 1;
+        const amount = currentPlayer.cards.hasCard(CardName.ShoppingCenter) ? 2 : 1;
         currentPlayer.money += amount;
         gameData.bank -= amount;
     }
@@ -61,14 +55,12 @@ export const coffeeShop: Card = {
     symbol: CardSymbol.Coffee,
     color: CardColor.Red,
     triggerNumbers: [3],
-    canBeTriggeredByOthers: true,
-    canBeTriggeredBySelf: false,
 
     trigger ({ currentPlayer, otherPlayers }: GameHandler) {
         otherPlayers.forEach((player) => {
-            for (let i = 0; i < player.cardCount(CardName.CoffeeShop); i += 1) {
+            for (let i = 0; i < player.cards.cardCount(CardName.CoffeeShop); i += 1) {
                 // TODO: current player gives away money CLOCKWISE to other players, if he can
-                const amount = player.hasCard(CardName.ShoppingCenter) ? 2 : 1;
+                const amount = player.cards.hasCard(CardName.ShoppingCenter) ? 2 : 1;
                 currentPlayer.money -= amount;
                 player.money += amount;
             }
@@ -84,11 +76,9 @@ export const shop: Card = {
     symbol: CardSymbol.Box,
     color: CardColor.Green,
     triggerNumbers: [4],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
-        const amount = currentPlayer.hasCard(CardName.ShoppingCenter) ? 4 : 3;
+        const amount = currentPlayer.cards.hasCard(CardName.ShoppingCenter) ? 4 : 3;
         currentPlayer.money += amount;
         gameData.bank -= amount;
     }
@@ -102,8 +92,6 @@ export const forest: Card = {
     symbol: CardSymbol.Cog,
     color: CardColor.Blue,
     triggerNumbers: [5],
-    canBeTriggeredByOthers: true,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
         currentPlayer.money += 1;
@@ -120,8 +108,6 @@ export const stadium: Card = {
     symbol: CardSymbol.Tower,
     color: CardColor.Purple,
     triggerNumbers: [6],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, otherPlayers }: GameHandler) {
         otherPlayers.forEach((player) => {
@@ -140,8 +126,6 @@ export const televisionStudio: Card = {
     symbol: CardSymbol.Tower,
     color: CardColor.Purple,
     triggerNumbers: [6],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, targetPlayer }: GameHandler) {
         // TODO: don't go to negative money
@@ -158,16 +142,14 @@ export const officeBuilding: Card = {
     symbol: CardSymbol.Tower,
     color: CardColor.Purple,
     triggerNumbers: [6],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, targetPlayer, swapCardOwn, swapCardTarget }: GameHandler) {
         // assume we have the card and the target has the card too
-        currentPlayer.removeCard(swapCardOwn);
-        targetPlayer.addCard(swapCardOwn);
+        currentPlayer.cards.removeCard(swapCardOwn);
+        targetPlayer.cards.addCard(swapCardOwn);
 
-        targetPlayer.removeCard(swapCardTarget);
-        currentPlayer.addCard(swapCardTarget);
+        targetPlayer.cards.removeCard(swapCardTarget);
+        currentPlayer.cards.addCard(swapCardTarget);
     }
 };
 //
@@ -179,11 +161,9 @@ export const dairyShop: Card = {
     symbol: CardSymbol.Factory,
     color: CardColor.Green,
     triggerNumbers: [7],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
-        const symbolCount = currentPlayer.symbolCount(CardSymbol.Pig);
+        const symbolCount = currentPlayer.cards.symbolCount(CardSymbol.Pig);
         currentPlayer.money += symbolCount * 3;
         gameData.bank -= symbolCount * 3;
     }
@@ -197,11 +177,9 @@ export const furnitureFactory: Card = {
     symbol: CardSymbol.Factory,
     color: CardColor.Green,
     triggerNumbers: [8],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
-        const symbolCount = currentPlayer.symbolCount(CardSymbol.Cog);
+        const symbolCount = currentPlayer.cards.symbolCount(CardSymbol.Cog);
         currentPlayer.money += symbolCount * 3;
         gameData.bank -= symbolCount * 3;
     }
@@ -215,8 +193,6 @@ export const mine: Card = {
     symbol: CardSymbol.Cog,
     color: CardColor.Blue,
     triggerNumbers: [9],
-    canBeTriggeredByOthers: true,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
         currentPlayer.money += 5;
@@ -232,8 +208,6 @@ export const applePark: Card = {
     symbol: CardSymbol.Wheat,
     color: CardColor.Blue,
     triggerNumbers: [10],
-    canBeTriggeredByOthers: true,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
         currentPlayer.money += 3;
@@ -249,14 +223,12 @@ export const restaurant: Card = {
     symbol: CardSymbol.Coffee,
     color: CardColor.Red,
     triggerNumbers: [9, 10],
-    canBeTriggeredByOthers: true,
-    canBeTriggeredBySelf: false,
 
     trigger ({ currentPlayer, otherPlayers }: GameHandler) {
         otherPlayers.forEach((player) => {
-            for (let i = 0; i < player.cardCount(CardName.Restaurant); i += 1) {
+            for (let i = 0; i < player.cards.cardCount(CardName.Restaurant); i += 1) {
                 // TODO: current player gives away money CLOCKWISE to other players, if he can
-                const amount = player.hasCard(CardName.ShoppingCenter) ? 3 : 2;
+                const amount = player.cards.hasCard(CardName.ShoppingCenter) ? 3 : 2;
                 currentPlayer.money -= amount;
                 player.money += amount;
             }
@@ -272,11 +244,9 @@ export const mall: Card = {
     symbol: CardSymbol.Other,
     color: CardColor.Green,
     triggerNumbers: [11, 12],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: true,
 
     trigger ({ currentPlayer, gameData }: GameHandler) {
-        const symbolCount = currentPlayer.symbolCount(CardSymbol.Wheat);
+        const symbolCount = currentPlayer.cards.symbolCount(CardSymbol.Wheat);
         currentPlayer.money += symbolCount * 2;
         gameData.bank -= symbolCount * 2;
     }
@@ -293,8 +263,6 @@ export const station: Card = {
     symbol: CardSymbol.Tower,
     color: CardColor.Dominant,
     triggerNumbers: [],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: false,
 
     trigger (handler: GameHandler) {}
 };
@@ -309,8 +277,6 @@ export const shoppingCenter: Card = {
     symbol: CardSymbol.Tower,
     color: CardColor.Dominant,
     triggerNumbers: [],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: false,
 
     trigger (handler: GameHandler) {}
 };
@@ -325,8 +291,6 @@ export const amusementPark: Card = {
     symbol: CardSymbol.Tower,
     color: CardColor.Dominant,
     triggerNumbers: [],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: false,
 
     trigger (handler: GameHandler) {}
 };
@@ -341,8 +305,6 @@ export const transmitter: Card = {
     symbol: CardSymbol.Tower,
     color: CardColor.Dominant,
     triggerNumbers: [],
-    canBeTriggeredByOthers: false,
-    canBeTriggeredBySelf: false,
 
     trigger (handler: GameHandler) {}
 };

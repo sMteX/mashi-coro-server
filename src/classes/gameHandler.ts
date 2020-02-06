@@ -1,10 +1,11 @@
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { Game } from '@app/database/entities/game.entity';
 import { PlayerGameData } from './playerGameData';
 import {
     wheatField, farm, bakery, coffeeShop, shop, forest,
     stadium, televisionStudio, officeBuilding, dairyShop,
-    furnitureFactory, mine, applePark, restaurant, mall, dominants, CardName, cardMap,
+    furnitureFactory, mine, applePark, restaurant, mall, dominants,
+    CardName, cardMap, Card, CardColor
 } from './cards';
 import { CardCollection } from '@app/classes/cardCollection';
 
@@ -35,7 +36,8 @@ export class GameHandler {
     currentPlayerId: number;
     mostRecentRoll: {
         player: number;
-        dice: number[]
+        dice: number[];
+        sum: number;
     };
 
     constructor(game: Game, server: Server, socketIdMap: { [socketId: string]: number }) {
@@ -77,8 +79,8 @@ export class GameHandler {
         return this.playerIds[next];
     }
 
-    get winner(): number|undefined {
-        let winnerId: number;
+    get winner(): number|null {
+        let winnerId: number = null;
         Object.entries(this.playerData).forEach(([id, data]) => {
             if (data.doesWin()) {
                 winnerId = Number(id);
@@ -86,6 +88,56 @@ export class GameHandler {
             }
         });
         return winnerId;
+    }
+
+    get currentPlayerMoneyMap(): { [id: number]: number } {
+        const map = {};
+        Object.entries(this.playerData).forEach(([id, data]) => {
+            map[id] = data.money;
+        });
+        return map;
+    }
+
+    triggerRedCards() {
+        this.otherPlayers.forEach((player) => {
+            Object.entries(player.cards.cards).forEach(([cardName, count]) => {
+                const card: Card = cardMap[cardName];
+                if (card.color !== CardColor.Red || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
+                    return;
+                }
+                for (let i = 0; i < count; i += 1) {
+                    card.trigger(this);
+                }
+            });
+        });
+    }
+
+    triggerBlueCards() {
+        // for each card every player has (excluding dominants), call the card's trigger()
+        Object.values(this.playerData).forEach((player) => {
+            Object.entries(player.cards.cards).forEach(([cardName, count]) => {
+                const card: Card = cardMap[cardName];
+                if (card.color !== CardColor.Blue || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
+                    return;
+                }
+                for (let i = 0; i < count; i += 1) {
+                    card.trigger(this);
+                }
+            });
+        });
+    }
+
+    triggerGreenCards() {
+        // for each card player has (excluding dominants), call the card's trigger()
+        Object.entries(this.currentPlayer.cards.cards).forEach(([cardName, count]) => {
+            const card: Card = cardMap[cardName];
+            if (card.color !== CardColor.Green || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
+                return;
+            }
+            for (let i = 0; i < count; i += 1) {
+                card.trigger(this);
+            }
+        });
     }
 
     setTargetPlayer(id: number) {
@@ -116,12 +168,16 @@ export class GameHandler {
 
     rollDice(amount: number): number[] {
         const dice = [];
+        let sum = 0;
         dice.push(Math.floor(Math.random() * 6) + 1);
+        sum += dice[0];
         if (amount === 2) {
             dice.push(Math.floor(Math.random() * 6) + 1);
+            sum += dice[1];
         }
         this.mostRecentRoll.player = this.currentPlayerId;
         this.mostRecentRoll.dice = [...dice];
+        this.mostRecentRoll.sum = sum;
         return dice;
     }
 
