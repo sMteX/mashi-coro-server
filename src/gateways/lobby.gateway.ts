@@ -46,7 +46,7 @@ export class LobbyGateway implements OnGatewayDisconnect {
 
     @SubscribeMessage(events.input.PLAYER_ENTER)
     async playerEnter(@MessageBody() data: PlayerEnter,
-                      @ConnectedSocket() client: Socket): Promise<number> {
+                      @ConnectedSocket() client: Socket): Promise<{ id: number; name: string; }> {
         if (!this.games[data.game]) {
             this.games[data.game] = await this.gameRepository.findOne({ slug: data.game });
             this.readiness[data.game] = {};
@@ -76,7 +76,10 @@ export class LobbyGateway implements OnGatewayDisconnect {
             this.server.in(data.game).emit(events.output.GAME_PLAYABLE);
         }
         // return new player's ID
-        return player.id;
+        return {
+            id: player.id,
+            name: data.playerName
+        };
     }
 
     @SubscribeMessage(events.input.PLAYER_READY_STATUS)
