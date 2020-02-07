@@ -41,7 +41,7 @@ export const bakery: Card = {
     triggerNumbers: [2, 3],
 
     trigger (owner, { gameData }) {
-        const amount = owner.cards.hasCard(CardName.ShoppingCenter) ? 2 : 1;
+        const amount = owner.hasCard(CardName.ShoppingCenter) ? 2 : 1;
         owner.money += amount;
         gameData.bank -= amount;
     }
@@ -57,7 +57,7 @@ export const coffeeShop: Card = {
     triggerNumbers: [3],
 
     trigger (owner, { currentPlayer }) {
-        const amount = owner.cards.hasCard(CardName.ShoppingCenter) ? 2 : 1;
+        const amount = owner.hasCard(CardName.ShoppingCenter) ? 2 : 1;
         const realAmount = Math.min(amount, currentPlayer.money);
         currentPlayer.money -= realAmount;
         owner.money += realAmount;
@@ -74,7 +74,7 @@ export const shop: Card = {
     triggerNumbers: [4],
 
     trigger (owner, { gameData }) {
-        const amount = owner.cards.hasCard(CardName.ShoppingCenter) ? 4 : 3;
+        const amount = owner.hasCard(CardName.ShoppingCenter) ? 4 : 3;
         owner.money += amount;
         gameData.bank -= amount;
     }
@@ -142,11 +142,11 @@ export const officeBuilding: Card = {
 
     trigger (owner, { targetPlayer, swapCardOwn, swapCardTarget }) {
         // assume we have the card and the target has the card too
-        owner.cards.removeCard(swapCardOwn);
-        targetPlayer.cards.addCard(swapCardOwn);
+        owner.removeCard(swapCardOwn);
+        targetPlayer.addCard(swapCardOwn);
 
-        targetPlayer.cards.removeCard(swapCardTarget);
-        owner.cards.addCard(swapCardTarget);
+        targetPlayer.removeCard(swapCardTarget);
+        owner.addCard(swapCardTarget);
     }
 };
 //
@@ -160,7 +160,7 @@ export const dairyShop: Card = {
     triggerNumbers: [7],
 
     trigger (owner, { gameData }) {
-        const symbolCount = owner.cards.symbolCount(CardSymbol.Pig);
+        const symbolCount = owner.symbolCount(CardSymbol.Pig);
         owner.money += symbolCount * 3;
         gameData.bank -= symbolCount * 3;
     }
@@ -176,7 +176,7 @@ export const furnitureFactory: Card = {
     triggerNumbers: [8],
 
     trigger (owner, { gameData }) {
-        const symbolCount = owner.cards.symbolCount(CardSymbol.Cog);
+        const symbolCount = owner.symbolCount(CardSymbol.Cog);
         owner.money += symbolCount * 3;
         gameData.bank -= symbolCount * 3;
     }
@@ -222,7 +222,7 @@ export const restaurant: Card = {
     triggerNumbers: [9, 10],
 
     trigger (owner, { currentPlayer }) {
-        const amount = owner.cards.hasCard(CardName.ShoppingCenter) ? 3 : 2;
+        const amount = owner.hasCard(CardName.ShoppingCenter) ? 3 : 2;
         const realAmount = Math.min(amount, currentPlayer.money);
         currentPlayer.money -= realAmount;
         owner.money += realAmount;
@@ -239,7 +239,7 @@ export const mall: Card = {
     triggerNumbers: [11, 12],
 
     trigger (owner, { gameData }) {
-        const symbolCount = owner.cards.symbolCount(CardSymbol.Wheat);
+        const symbolCount = owner.symbolCount(CardSymbol.Wheat);
         owner.money += symbolCount * 2;
         gameData.bank -= symbolCount * 2;
     }

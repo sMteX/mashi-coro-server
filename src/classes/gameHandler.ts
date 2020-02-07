@@ -161,7 +161,7 @@ export class GameHandler {
     buyCard(playerId: number, card: CardName): void {
         // on server, dominants are treated as regular cards, but they're not on the table
         const cardObj = cardMap[card];
-        this.playerData[playerId].cards.addCard(card);
+        this.playerData[playerId].addCard(card);
         if (!dominants.map(c => c.cardName).includes(card)) {
             this.gameData.cards.removeCard(card);
         }
