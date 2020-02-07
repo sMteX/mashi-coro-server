@@ -37,6 +37,8 @@ export class GameGateway implements OnGatewayDisconnect {
     } = {};
 
     async handleDisconnect(client: Socket): Promise<void> {
+        // TODO: fix this, breaks all the time
+        return;
         const playerId = this.socketIdMap[client.id];
         delete this.socketIdMap[client.id];
         // find a game, where given player was
@@ -88,7 +90,6 @@ export class GameGateway implements OnGatewayDisconnect {
         // players will connect in matter of milliseconds to seconds apart from each other, might as well wait and send all the info at once
         if (this.allPlayersConnected(this.g(data.game))) {
             this.games[data.game].handler = new GameHandler(this.g(data.game), this.server, this.socketIdMap);
-
             // emit starting data to the room - players (names, cards, money), buyable cards, game bank etc. - to setup the client UI
             const gameStartingData = this.h(data.game).constructInitialData();
             this.server.in(data.game).emit(events.output.GAME_DATA_LOAD, gameStartingData);
@@ -129,17 +130,23 @@ export class GameGateway implements OnGatewayDisconnect {
             const afterRed: { [p: number]: number } = game.currentPlayerMoneyMap;
 
             // in here, others get coins from current player, so redGains contains how many coins OTHERS get from current player
-            // [playerId]: coins
-            const redGains = {};
+            // [playerId]: {gains?, newMoney}
+            const redResult = {};
             Object.keys(afterRed).forEach((id: string) => {
                 if (Number(id) !== data.playerId) {
                     // we only care about other player gains
-                    redGains[id] = afterRed[id] - beforeRed[id];
+                    redResult[id] = {
+                        gains: afterRed[id] - beforeRed[id],
+                        newMoney: afterRed[id]
+                    };
+                } else {
+                    redResult[id] = {
+                        newMoney: afterRed[id]
+                    };
                 }
             });
             this.server.in(data.game).emit(events.output.RED_CARD_EFFECTS, {
-                newMoney: afterRed,
-                gains: redGains,
+                result: redResult,
                 fromPlayer: data.playerId
             });
 
@@ -149,14 +156,16 @@ export class GameGateway implements OnGatewayDisconnect {
                 const afterBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
 
                 // now each player gets their own money, no stealing
-                // [playerId]: coins
-                const blueGains = {};
+                // [playerId]: { gains, newMoney }
+                const blueResult = {};
                 Object.keys(afterBlue).forEach((id: string) => {
-                    redGains[id] = afterBlue[id] - beforeBlue[id];
+                    blueResult[id] = {
+                        gains: afterBlue[id] - beforeBlue[id],
+                        newMoney: afterBlue[id]
+                    };
                 });
                 this.server.in(data.game).emit(events.output.BLUE_CARD_EFFECTS, {
-                    newMoney: afterBlue,
-                    gains: blueGains
+                    result: blueResult
                 });
                 setTimeout(() => {
                     // now only current player gets coins
@@ -186,7 +195,7 @@ export class GameGateway implements OnGatewayDisconnect {
         this.h(data.game).buyCard(data.playerId, data.card);
         // does this really return undefined if we don't have a winner? it should...
         const winner = this.h(data.game).winner;
-        if (winner !== undefined) {
+        if (winner !== null) {
             this.server.in(data.game).emit(events.output.PLAYER_WON_GAME, {
                 playerId: winner
             });
@@ -202,7 +211,6 @@ export class GameGateway implements OnGatewayDisconnect {
     @SubscribeMessage(events.input.END_TURN)
     async endTurn(@MessageBody() data: EndTurn,
                   @ConnectedSocket() client: Socket): Promise<void> {
-
         const game = this.h(data.game);
         const hasAmusementPark = game.currentPlayer.cards.hasCard(CardName.AmusementPark);
         const latestDice = game.mostRecentRoll.dice;

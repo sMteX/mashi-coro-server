@@ -27,7 +27,7 @@ export class GameHandler {
     socketIdMap: { [socket: string]: number } = {};
     playerData: { [id: number]: PlayerGameData } = {};
     // stores ids of players... also serves to dictate the order of players
-    playerIds: number[];
+    playerIds: number[] = [];
     gameData: GameData;
 
     targetPlayer: PlayerGameData;    // some cards require targeting a player
@@ -200,9 +200,11 @@ export class GameHandler {
             dice.push(Math.floor(Math.random() * 6) + 1);
             sum += dice[1];
         }
-        this.mostRecentRoll.player = this.currentPlayerId;
-        this.mostRecentRoll.dice = [...dice];
-        this.mostRecentRoll.sum = sum;
+        this.mostRecentRoll = {
+            sum,
+            player: this.currentPlayerId,
+            dice: [...dice]
+        };
         return dice;
     }
 
