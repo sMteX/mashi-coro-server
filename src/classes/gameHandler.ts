@@ -26,6 +26,7 @@ export class GameHandler {
 
     socketIdMap: { [socket: string]: number } = {};
     playerData: { [id: number]: PlayerGameData } = {};
+    // stores ids of players... also serves to dictate the order of players
     playerIds: number[];
     gameData: GameData;
 
@@ -98,10 +99,31 @@ export class GameHandler {
         return map;
     }
 
+    private antiClockwisePlayers(playerId: number): PlayerGameData[] {
+        /*
+        example
+
+        indexes:
+            0, 1, 2, 3
+
+        current player = 2
+
+        anti-clockwise order of remaining = 1, 0, 3
+         */
+        const index = this.playerIds.indexOf(playerId);
+        const antiClockwiseOrder = [];
+        for (let i = index - 1; i >= 0; i -= 1) {
+            antiClockwiseOrder.push(i);
+        }
+        for (let i = this.playerIds.length - 1; i > index; i -= 1) {
+            antiClockwiseOrder.push(i);
+        }
+        return antiClockwiseOrder.map(index => this.playerData[this.playerIds[index]]);
+    }
+
     triggerRedCards() {
-        const players = this.otherPlayers;
-        // TODO: implement triggering in opposite direction
-        players.forEach((player) => {
+        const acOrder = this.antiClockwisePlayers(this.currentPlayerId);
+        acOrder.forEach((player) => {
             Object.entries(player.cards.cards).forEach(([cardName, count]) => {
                 const card: Card = cardMap[cardName];
                 if (card.color !== CardColor.Red || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {

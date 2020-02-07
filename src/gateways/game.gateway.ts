@@ -124,7 +124,6 @@ export class GameGateway implements OnGatewayDisconnect {
             sum: latestRoll[0] + (latestRoll.length > 1 ? latestRoll[1] : 0)
         });
         setTimeout(() => {
-            // TODO: check red cards of all other players
             const beforeRed: { [p: number]: number } = game.currentPlayerMoneyMap;
             game.triggerRedCards();
             const afterRed: { [p: number]: number } = game.currentPlayerMoneyMap;
@@ -145,7 +144,6 @@ export class GameGateway implements OnGatewayDisconnect {
             });
 
             setTimeout(() => {
-                // TODO: check blue cards
                 const beforeBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
                 game.triggerBlueCards();
                 const afterBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
@@ -161,7 +159,6 @@ export class GameGateway implements OnGatewayDisconnect {
                     gains: blueGains
                 });
                 setTimeout(() => {
-                    // TODO: check green cards
                     // now only current player gets coins
                     const beforeGreen = game.currentPlayer.money;
                     game.triggerGreenCards();
