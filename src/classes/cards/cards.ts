@@ -323,5 +323,7 @@ export const cardMap: { [index in CardName]: Card } = {
     [CardName.AmusementPark]: amusementPark,
     [CardName.Transmitter]: transmitter
 };
-
+export const normalCards: Card[] =
+    [wheatField, farm, bakery, coffeeShop, shop, forest, stadium, televisionStudio,
+        officeBuilding, dairyShop, furnitureFactory, mine, applePark, restaurant, mall];
 export const dominants: Card[] = [station, shoppingCenter, amusementPark, transmitter];

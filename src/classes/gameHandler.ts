@@ -4,7 +4,7 @@ import { PlayerGameData } from './playerGameData';
 import {
     wheatField, farm, bakery, coffeeShop, shop, forest,
     stadium, televisionStudio, officeBuilding, dairyShop,
-    furnitureFactory, mine, applePark, restaurant, mall, dominants,
+    furnitureFactory, mine, applePark, restaurant, mall, dominants, normalCards,
     CardName, cardMap, Card, CardColor
 } from './cards';
 import { CardCollection } from '@app/classes/cardCollection';
@@ -237,41 +237,44 @@ export class GameHandler {
         Object.entries(this.socketIdMap).forEach(([socket, id]) => {
             idSocketMap[id] = socket;
         });
+        const cardDb: { [name in CardName]: Card } = Object.assign({}, cardMap);
         const players = this.game.players.map(player => ({
             id: player.id,
             socketId: idSocketMap[player.id],
             name: player.name,
             cards: [
-                { card: wheatField, count: 1 },
-                { card: bakery, count: 1 }
+                { card: CardName.WheatField, count: 1 },
+                { card: CardName.Bakery, count: 1 }
             ],
             money: 3
         }));
+        // TODO: this will probably change with expansions and might be generated elsewhere/at different time
         const buyableCards = [
-            { card: wheatField, count: 6 },
-            { card: farm, count: 6 },
-            { card: bakery, count: 6 },
-            { card: coffeeShop, count: 6 },
-            { card: shop, count: 6 },
-            { card: forest, count: 6 },
-            { card: stadium, count: 4 },
-            { card: televisionStudio, count: 4 },
-            { card: officeBuilding, count: 4 },
-            { card: dairyShop, count: 6 },
-            { card: furnitureFactory, count: 6 },
-            { card: mine, count: 6 },
-            { card: applePark, count: 6 },
-            { card: restaurant, count: 6 },
-            { card: mall, count: 6 }
+            { card: CardName.WheatField, count: 6 },
+            { card: CardName.Farm, count: 6 },
+            { card: CardName.Bakery, count: 6 },
+            { card: CardName.CoffeeShop, count: 6 },
+            { card: CardName.Shop, count: 6 },
+            { card: CardName.Forest, count: 6 },
+            { card: CardName.Stadium, count: 4 },
+            { card: CardName.TelevisionStudio, count: 4 },
+            { card: CardName.OfficeBuilding, count: 4 },
+            { card: CardName.DairyShop, count: 6 },
+            { card: CardName.FurnitureFactory, count: 6 },
+            { card: CardName.Mine, count: 6 },
+            { card: CardName.ApplePark, count: 6 },
+            { card: CardName.Restaurant, count: 6 },
+            { card: CardName.Mall, count: 6 }
         ];
         const winningCards = [
-            ...dominants
+            ...dominants.map(({ cardName }) => ({ card: cardName }))
         ];
         const bank = this.gameData.bank;
         const startingPlayerId = this.playerIds[Math.floor(Math.random() * this.game.players.length)];
         this.currentPlayerId = startingPlayerId;
         return {
             players,
+            cardDb,
             buyableCards,
             winningCards,
             bank,
