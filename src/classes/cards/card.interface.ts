@@ -17,7 +17,10 @@ export enum CardSymbol {
     Cog, // Les, Dul
     Tower, // Stadion, Televizni studio, Kancelarska budova
     Factory, // Mlekarna, Tovarna na nabytek
-    Other // Obchodni dum...
+    Boat, // Rybarsky clun, Rybarska lod..
+    Mall, // Obchodni dum
+    Suitcase, // Zalozna, Stavebni firma...
+    Other // just in case?
 }
 
 export enum CardName {

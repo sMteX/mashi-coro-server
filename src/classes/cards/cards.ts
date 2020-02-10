@@ -234,7 +234,7 @@ export const mall: Card = {
     name: 'Obchodní dům',
     cost: 2,
     description: 'Za každý svůj objekt Obilí si vezměte 2 mince z banku',
-    symbol: CardSymbol.Other,
+    symbol: CardSymbol.Mall,
     color: CardColor.Green,
     triggerNumbers: [11, 12],
 
