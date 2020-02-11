@@ -194,7 +194,7 @@ export class GameHandler {
     }
 
     hasActivePurpleCards(): boolean {
-        // TODO: add IT Center and Water Treatment Plant
+        // TODO: add Water Treatment Plant (IT Center is special of specials, it can be triggered passively)
         const activeCards = [CardName.TelevisionStudio, CardName.OfficeBuilding];
         return activeCards.some(card => this.currentPlayer.hasCard(card));
     }

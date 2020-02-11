@@ -18,7 +18,7 @@ import {
     EndRoll,
     EndTurn,
     PlayerConnect,
-    RollDice,
+    RollDice
 } from '@utils/interfaces/events/game/input.interface';
 import { Card, cardMap, CardName } from '@app/classes/cards';
 
@@ -227,17 +227,54 @@ export class GameGateway implements OnGatewayDisconnect {
     @SubscribeMessage(events.input.ACTIVE_PURPLE_CARDS_INPUT)
     async activePurpleCards(@MessageBody() data: ActivePurpleCardsInput,
                             @ConnectedSocket() client: Socket): Promise<void> {
-        // TODO: data.inputs has all activated effects, which are tied to specific cards, hardcoded
-        //  they could be passed as a third parameter to trigger() function, instead of keeping those as class properties on GameHandler
-
         const handler = this.h(data.game);
+        const results: {[key in CardName]?: any} = {};
         // this should arrive only if it's actually not empty
         Object.entries(data.inputs).forEach(([cardName, args]) => {
             const card: Card = cardMap[cardName];
+            const beforeCard = handler.currentPlayerMoneyMap;
             card.trigger(handler.currentPlayer, handler, args);
+            const afterCard = handler.currentPlayerMoneyMap;
+
+            /*
+            Active cards and their results:
+                6 - Office Building - current player and target player will swap one card
+                    - return object might be the same - target player, my card, his card (and on client, swap those cards same as here)
+                6 - Stadium - current player gets 5 coins from target player
+                    - again, same return object (+ current player's new coins)
+
+                8 - Water Treatment Plant - current player names a card (CardName pretty much) and all player's cards of the same name are KO'd
+                    - return - just the CardName??
+                10 - IT Center - technically a passive card (but is checked for before end of turn), so probably don't return anything here
+             */
+            const cardEnum = Number(cardName) as CardName;
+            if (cardEnum === CardName.OfficeBuilding) {
+                // args:
+                //  targetPlayerId: number;
+                //  swapCardOwn: CardName;
+                //  swapCardTarget: CardName;
+                results[cardEnum] = {
+                    ...args,
+                    currentPlayerId: data.playerId
+                };
+            } else if (cardEnum === CardName.Stadium) {
+                const targetPlayerId = args as number;
+                results[cardEnum] = {
+                    targetPlayerId,
+                    currentPlayerId: data.playerId,
+                    gain: afterCard[handler.currentPlayerId] - beforeCard[handler.currentPlayerId],
+                    currentPlayerMoney: handler.currentPlayer.money,
+                    targetPlayerMoney: handler.getPlayer(targetPlayerId).money
+                };
+            }
         });
-        // TODO: somehow, gather results of what happened here
-        //  - probably in a similar hardcoded fashion, send back to client and after delay, send BUILDING_POSSIBLE
+        this.server.in(data.game).emit(events.output.ACTIVE_PURPLE_CARD_RESULT, { results });
+        setTimeout(() => {
+            // TODO: technically check for Town Hall (no coins before building = 1 coin)
+            //  but I think it's not necessary = this gets triggered only if some cards are ACTUALLY triggered
+            //  and all of them somehow generate coins
+            this.server.to(`${client.id}`).emit(events.output.BUILDING_POSSIBLE);
+        }, DEFAULT_DELAY);
     }
 
     @SubscribeMessage(events.input.BUY_CARD)
