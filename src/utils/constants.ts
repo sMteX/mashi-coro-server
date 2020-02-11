@@ -23,6 +23,7 @@ export const events = {
             PLAYER_CONNECT: 'playerConnect',
             DICE_ROLL: 'diceRoll', // beginning of the turn
             END_ROLL: 'endRoll',
+            ACTIVE_PURPLE_CARDS_INPUT: 'activePurpleCardsInput',
             BUY_CARD: 'buyCard',
             END_TURN: 'endTurn'
         },
@@ -34,6 +35,8 @@ export const events = {
             RED_CARD_EFFECTS: 'redCardEffects',
             BLUE_CARD_EFFECTS: 'blueCardEffects',
             GREEN_CARD_EFFECTS: 'greenCardEffects',
+            PASSIVE_PURPLE_CARD_EFFECTS: 'passivePurpleCardEffects',
+            ACTIVE_PURPLE_CARD_WAIT: 'activePurpleCardWait',
             BUILDING_POSSIBLE: 'buildingPossible',
             PLAYER_BOUGHT_CARD: 'playerBoughtCard',
             AIRPORT_GAIN: 'airportGain',

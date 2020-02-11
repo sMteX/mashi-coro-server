@@ -55,5 +55,5 @@ export interface Card {
     cost: number;
     description: string;
     // reactive methods?
-    trigger: (owner: PlayerGameData, game: GameHandler) => void;
+    trigger: (owner: PlayerGameData, game: GameHandler, args?: any) => void;
 }

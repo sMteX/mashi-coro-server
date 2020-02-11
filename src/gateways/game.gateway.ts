@@ -12,8 +12,15 @@ import { Repository } from 'typeorm';
 import { Game } from '@app/database/entities/game.entity';
 import { events as eventConstants } from '@utils/constants';
 import { GameHandler } from '@app/classes/gameHandler';
-import { BuyCard, EndRoll, EndTurn, PlayerConnect, RollDice } from '@utils/interfaces/events/game/input.interface';
-import { CardName } from '@app/classes/cards';
+import {
+    ActivePurpleCardsInput,
+    BuyCard,
+    EndRoll,
+    EndTurn,
+    PlayerConnect,
+    RollDice,
+} from '@utils/interfaces/events/game/input.interface';
+import { Card, cardMap, CardName } from '@app/classes/cards';
 
 const { game: events } = eventConstants;
 interface GamePair {
@@ -179,13 +186,58 @@ export class GameGateway implements OnGatewayDisconnect {
                     });
 
                     setTimeout(() => {
-                        // TODO: check for Town Hall
-                        // TODO: trigger purple cards
-                        this.server.to(`${client.id}`).emit(events.output.BUILDING_POSSIBLE);
+                        const beforePassivePurple = game.currentPlayerMoneyMap;
+                        game.triggerPassivePurpleCards();
+                        const afterPassivePurple = game.currentPlayerMoneyMap;
+
+                        const passivePurpleResult = {};
+                        Object.keys(afterPassivePurple).forEach((id: string) => {
+                            if (Number(id) === data.playerId) {
+                                // we only care about our gains
+                                // TODO: rework after Park is implemented (balancing all players' coins)
+                                // or just send all the data all the time and let client handle the display..
+                                passivePurpleResult[id] = {
+                                    gains: afterPassivePurple[id] - beforePassivePurple[id],
+                                    newMoney: afterPassivePurple[id]
+                                };
+                            } else {
+                                passivePurpleResult[id] = {
+                                    newMoney: afterPassivePurple[id]
+                                };
+                            }
+                        });
+
+                        this.server.in(data.game).emit(events.output.PASSIVE_PURPLE_CARD_EFFECTS, {
+                            result: passivePurpleResult,
+                            player: data.playerId
+                        });
+
+                        if (game.hasActivePurpleCards()) {
+                            this.server.to(`${client.id}`).emit(events.output.ACTIVE_PURPLE_CARD_WAIT);
+                        } else {
+                            // TODO: check for Town Hall (before building)
+                            this.server.to(`${client.id}`).emit(events.output.BUILDING_POSSIBLE);
+                        }
                     }, DEFAULT_DELAY);
                 }, DEFAULT_DELAY);
             }, DEFAULT_DELAY);
         }, DEFAULT_DELAY);
+    }
+
+    @SubscribeMessage(events.input.ACTIVE_PURPLE_CARDS_INPUT)
+    async activePurpleCards(@MessageBody() data: ActivePurpleCardsInput,
+                            @ConnectedSocket() client: Socket): Promise<void> {
+        // TODO: data.inputs has all activated effects, which are tied to specific cards, hardcoded
+        //  they could be passed as a third parameter to trigger() function, instead of keeping those as class properties on GameHandler
+
+        const handler = this.h(data.game);
+        // this should arrive only if it's actually not empty
+        Object.entries(data.inputs).forEach(([cardName, args]) => {
+            const card: Card = cardMap[cardName];
+            card.trigger(handler.currentPlayer, handler, args);
+        });
+        // TODO: somehow, gather results of what happened here
+        //  - probably in a similar hardcoded fashion, send back to client and after delay, send BUILDING_POSSIBLE
     }
 
     @SubscribeMessage(events.input.BUY_CARD)

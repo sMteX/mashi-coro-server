@@ -17,6 +17,9 @@ export interface RollDice extends BaseGameInput {
 
 export interface EndRoll extends BaseGameInput {}
 
+export interface ActivePurpleCardsInput extends BaseGameInput {
+    inputs: { [card in CardName]?: any };
+}
 export interface BuyCard extends BaseGameInput {
     card: CardName;
 }

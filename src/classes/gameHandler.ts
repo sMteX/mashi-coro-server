@@ -2,10 +2,26 @@ import { Server } from 'socket.io';
 import { Game } from '@app/database/entities/game.entity';
 import { PlayerGameData } from './playerGameData';
 import {
-    wheatField, farm, bakery, coffeeShop, shop, forest,
-    stadium, televisionStudio, officeBuilding, dairyShop,
-    furnitureFactory, mine, applePark, restaurant, mall, dominants, normalCards,
-    CardName, cardMap, Card, CardColor
+    applePark,
+    bakery,
+    Card,
+    CardColor,
+    cardMap,
+    CardName,
+    coffeeShop,
+    dairyShop,
+    dominants,
+    farm,
+    forest,
+    furnitureFactory,
+    mall,
+    mine,
+    officeBuilding,
+    restaurant,
+    shop,
+    stadium,
+    televisionStudio,
+    wheatField,
 } from './cards';
 import { CardCollection } from '@app/classes/cardCollection';
 
@@ -163,6 +179,20 @@ export class GameHandler {
                 card.trigger(player, this);
             }
         });
+    }
+
+    triggerPassivePurpleCards() {
+        // TODO: implement Financial Office, Park and Publishing Office
+        const stadium = cardMap[CardName.Stadium];
+        if (this.currentPlayer.hasCard(stadium) && stadium.triggerNumbers.includes(this.mostRecentRoll.sum)) {
+            stadium.trigger(this.currentPlayer, this);
+        }
+    }
+
+    hasActivePurpleCards(): boolean {
+        // TODO: add IT Center and Water Treatment Plant
+        const activeCards = [CardName.TelevisionStudio, CardName.OfficeBuilding];
+        return activeCards.some(card => this.currentPlayer.hasCard(card));
     }
 
     setTargetPlayer(id: number) {
