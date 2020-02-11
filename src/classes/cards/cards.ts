@@ -1,5 +1,4 @@
 import { Card, CardColor, CardName, CardSymbol } from './card.interface';
-import { GameHandler } from '../gameHandler';
 
 export const wheatField: Card = {
     cardName: CardName.WheatField,
@@ -124,12 +123,19 @@ export const televisionStudio: Card = {
     color: CardColor.Purple,
     triggerNumbers: [6],
 
-    trigger (owner, { targetPlayer }) {
+    trigger (owner, handler, targetPlayerId: number) {
+        const targetPlayer = handler.getPlayer(targetPlayerId);
         const amount = Math.min(5, targetPlayer.money);
         targetPlayer.money -= amount;
         owner.money += amount;
     }
 };
+
+interface OfficeBuildingArgs {
+    targetPlayerId: number;
+    swapCardOwn: CardName;
+    swapCardTarget: CardName;
+}
 
 export const officeBuilding: Card = {
     cardName: CardName.OfficeBuilding,
@@ -140,13 +146,14 @@ export const officeBuilding: Card = {
     color: CardColor.Purple,
     triggerNumbers: [6],
 
-    trigger (owner, { targetPlayer, swapCardOwn, swapCardTarget }) {
+    trigger (owner, handler, args: OfficeBuildingArgs) {
         // assume we have the card and the target has the card too
-        owner.removeCard(swapCardOwn);
-        targetPlayer.addCard(swapCardOwn);
+        const targetPlayer = handler.getPlayer(args.targetPlayerId);
+        owner.removeCard(args.swapCardOwn);
+        targetPlayer.addCard(args.swapCardOwn);
 
-        targetPlayer.removeCard(swapCardTarget);
-        owner.addCard(swapCardTarget);
+        targetPlayer.removeCard(args.swapCardTarget);
+        owner.addCard(args.swapCardTarget);
     }
 };
 //

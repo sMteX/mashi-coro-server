@@ -72,8 +72,12 @@ export class GameHandler {
     //     return this.socketIdMap[this.currentPlayerSocket.id];
     // }
 
+    getPlayer(id: number|string): PlayerGameData {
+        return this.playerData[id];
+    }
+
     get currentPlayer(): PlayerGameData {
-        return this.playerData[this.currentPlayerId];
+        return this.getPlayer(this.currentPlayerId);
     }
 
     get otherPlayers(): PlayerGameData[] {
