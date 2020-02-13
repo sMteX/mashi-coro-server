@@ -216,7 +216,7 @@ export class GameGateway implements OnGatewayDisconnect {
                             this.server.to(`${client.id}`).emit(events.output.ACTIVE_PURPLE_CARD_WAIT);
                         } else {
                             // TODO: check for Town Hall (before building)
-                            this.server.to(`${client.id}`).emit(events.output.BUILDING_POSSIBLE);
+                            this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
                         }
                     }, DEFAULT_DELAY);
                 }, DEFAULT_DELAY);

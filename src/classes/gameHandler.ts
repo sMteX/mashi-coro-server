@@ -196,7 +196,7 @@ export class GameHandler {
     hasActivePurpleCards(): boolean {
         // TODO: add Water Treatment Plant (IT Center is special of specials, it can be triggered passively)
         const activeCards = [CardName.TelevisionStudio, CardName.OfficeBuilding];
-        return activeCards.some(card => this.currentPlayer.hasCard(card));
+        return this.mostRecentRoll.sum === 6 && activeCards.some(card => this.currentPlayer.hasCard(card));
     }
 
     setTargetPlayer(id: number) {
@@ -301,7 +301,7 @@ export class GameHandler {
             { card: CardName.Mall, count: 6 }
         ];
         const winningCards = [
-            ...dominants.map(({ cardName }) => ({ card: cardName }))
+            ...dominants.map(({ cardName }) => cardName)
         ];
         const bank = this.gameData.bank;
         const startingPlayerId = this.playerIds[Math.floor(Math.random() * this.game.players.length)];
