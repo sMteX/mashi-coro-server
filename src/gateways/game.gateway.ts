@@ -307,7 +307,7 @@ export class GameGateway implements OnGatewayDisconnect {
 
         // TODO: check for Airport
         // const eligibleForAirport = false;
-        const eligibleForAmusementPark = hasAmusementPark && sameDice;
+        const eligibleForAmusementPark = hasAmusementPark && sameDice && !game.amusementParkJustBought;
         const newPlayerId = game.nextPlayerId;
 
         const triggerNewTurn = () => {

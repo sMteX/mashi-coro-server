@@ -56,6 +56,7 @@ export class GameHandler {
         dice: number[];
         sum: number;
     };
+    amusementParkJustBought: boolean = false;
 
     constructor(game: Game, server: Server, socketIdMap: { [socketId: string]: number }) {
         this.game = game;
@@ -88,6 +89,7 @@ export class GameHandler {
 
     setCurrentPlayer(player: number) {
         this.currentPlayerId = player;
+        this.amusementParkJustBought = false;
     }
 
     get nextPlayerId(): number {
@@ -223,6 +225,12 @@ export class GameHandler {
         }
         this.playerData[playerId].money -= cardObj.cost;
         this.gameData.bank += cardObj.cost;
+
+        // flags to disable a dominant's effect the turn it's been bought:
+        if (card === CardName.AmusementPark) {
+            this.amusementParkJustBought = true;
+        }
+        // TODO: Airport in the same fashion
     }
 
     rollDice(amount: number): number[] {
