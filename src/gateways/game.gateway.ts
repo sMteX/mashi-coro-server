@@ -257,7 +257,7 @@ export class GameGateway implements OnGatewayDisconnect {
                     ...args,
                     currentPlayerId: data.playerId
                 };
-            } else if (cardEnum === CardName.Stadium) {
+            } else if (cardEnum === CardName.TelevisionStudio) {
                 const targetPlayerId = args as number;
                 results[cardEnum] = {
                     targetPlayerId,
@@ -273,7 +273,7 @@ export class GameGateway implements OnGatewayDisconnect {
             // TODO: technically check for Town Hall (no coins before building = 1 coin)
             //  but I think it's not necessary = this gets triggered only if some cards are ACTUALLY triggered
             //  and all of them somehow generate coins
-            this.server.to(`${client.id}`).emit(events.output.BUILDING_POSSIBLE);
+            this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
         }, DEFAULT_DELAY);
     }
 
