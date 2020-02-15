@@ -44,24 +44,39 @@ export class GameGateway implements OnGatewayDisconnect {
     } = {};
 
     async handleDisconnect(client: Socket): Promise<void> {
-        // TODO: fix this, breaks all the time
+        // is all this cleanup actually breaking it all?
         return;
+        if (this.socketIdMap[client.id] === undefined) {
+            // the client isn't even in the map, just return, there's nothing to be done
+            return;
+        }
         const playerId = this.socketIdMap[client.id];
         delete this.socketIdMap[client.id];
         // find a game, where given player was
-        const [gameSlug, pair] = Object.entries(this.games).find(([, { handler }]) => handler.playerIds.includes(playerId));
-        // const pair: GamePair = Object.values(this.games).find(({ handler }) => handler.playerIds.includes(playerId));
+        const slugAndPair = Object.entries(this.games).find(([, { game }]) => game.players.some(p => p.id === playerId));
+        if (!slugAndPair) {
+            // I don't know how this happens, but even at times where I think it should exist, it still doesn't..
+            // we end up here, if there isn't a game, that the client belongs to
+            // which I don't really know how it can happen because PLAYER_CONNECT is the first thing that happens after connecting to the gateway and player is assigned there
+            // TODO: probably safe to return then?
+            return;
+        }
+        const [gameSlug, pair] = slugAndPair;
         pair.game.players = pair.game.players.filter(p => p.id === playerId);
-        // will this work? or need to inject playerRepository?
+        // TODO: will this work? or need to inject playerRepository?
         await this.gameRepository.save(pair.game);
 
         if (pair.game.players.length >= 2) {
             // send event
-            client.in(gameSlug).emit(events.output.PLAYER_LEFT_GAME, {
+            client.to(gameSlug).emit(events.output.PLAYER_LEFT_GAME, {
                 playerId
             });
         } else {
-            // end game
+            client.to(gameSlug).emit(events.output.GAME_ENDED_EMPTY);
+            delete this.games[gameSlug];
+            await this.gameRepository.delete({
+                slug: gameSlug
+            });
         }
         client.leave(gameSlug);
     }
@@ -281,7 +296,8 @@ export class GameGateway implements OnGatewayDisconnect {
     async buyCard(@MessageBody() data: BuyCard,
                   @ConnectedSocket() client: Socket): Promise<void> {
         // add card to player, remove from the table, subtract money (and add to bank)
-        this.h(data.game).buyCard(data.playerId, data.card);
+        const game = this.h(data.game);
+        game.buyCard(data.playerId, data.card);
         // does this really return undefined if we don't have a winner? it should...
         const winner = this.h(data.game).winner;
         if (winner !== null) {
@@ -289,6 +305,18 @@ export class GameGateway implements OnGatewayDisconnect {
                 playerId: winner
             });
             // TODO: end somehow
+
+            Object.entries(this.socketIdMap)
+                .forEach(([socket, id]) => {
+                    if (!game.playerIds.includes(id)) {
+                        return;
+                    }
+                    delete this.socketIdMap[socket];
+                });
+            delete this.games[data.game];
+            await this.gameRepository.delete({
+                slug: data.game
+            });
             return;
         }
         this.server.in(data.game).emit(events.output.PLAYER_BOUGHT_CARD, {

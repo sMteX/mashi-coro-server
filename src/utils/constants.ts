@@ -44,7 +44,8 @@ export const events = {
             NEW_TURN: 'newTurn',
             AMUSEMENT_PARK_NEW_TURN: 'newTurnAmusement',
             PLAYER_LEFT_GAME: 'playerLeftGame',
-            PLAYER_WON_GAME: 'playerWonGame'
+            PLAYER_WON_GAME: 'playerWonGame',
+            GAME_ENDED_EMPTY: 'gameEndedEmpty'
         }
     }
 };
