@@ -4,6 +4,10 @@
     "description": "",
     "author": "Stuchlík Lukáš",
     "license": "MIT",
+    "engines": {
+        "node": "13.x",
+        "yarn": "1.21.x"
+    },
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "nest build",
