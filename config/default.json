@@ -16,6 +16,5 @@
         "database": "mashi_coro",
         "synchronize": false,
         "logging": false
-    },
-    "jwtSecret": "mySuperSecret"
+    }
 }
