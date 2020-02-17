@@ -18,9 +18,20 @@ export class ApiController {
     }
 
     @Post('/validateGame')
-    async validateGameSlug(@Body() data: { slug: string; }): Promise<boolean> {
+    async validateGameSlug(@Body() data: { slug: string; }): Promise<{success: boolean, full?: boolean}> {
         // TODO: verify if the slug is correct and the game is playable probably
-        const game = await this.gameRepository.findOne({ slug: data.slug });
-        return !!game;
+        const game = await this.gameRepository.findOne({
+            where: {
+                slug: data.slug
+            },
+            relations: ['players']
+        });
+        if (!game) {
+            return { success: false, full: false };
+        }
+        if (game.players.length <= 3) { // this is BEFORE joining, so there must be at most 3 players (careful, it might change in the time before this validation and actually joining)
+            return { success: true };
+        }
+        return { success: false, full: true };
     }
 }

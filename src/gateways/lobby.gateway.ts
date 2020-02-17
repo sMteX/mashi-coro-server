@@ -47,9 +47,20 @@ export class LobbyGateway implements OnGatewayDisconnect {
     @SubscribeMessage(events.input.PLAYER_ENTER)
     async playerEnter(@MessageBody() data: PlayerEnter,
                       @ConnectedSocket() client: Socket): Promise<{ id: number; name: string; }> {
-        if (!this.games[data.game]) {
-            this.games[data.game] = await this.gameRepository.findOne({ slug: data.game });
+        if (!this.readiness[data.game]) {
             this.readiness[data.game] = {};
+        }
+
+        // we need up-to-date info about the game's players, so we fetch data every time to be sure
+        this.games[data.game] = await this.gameRepository.findOne({
+            where: {
+                slug: data.game
+            },
+            relations: ['players']
+        });
+
+        if (this.games[data.game].players.length >= 4) {
+            return null;
         }
 
         // creates a new player entity and saves it (this.games[...].players DOESN'T HAVE the reference to it because we loaded it before this save, but we don't need it)
