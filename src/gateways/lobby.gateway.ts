@@ -161,6 +161,16 @@ export class LobbyGateway implements OnGatewayDisconnect {
             id: playerId
         });
         client.leave(game.slug);
-        // TODO: if game has zero players, remove from this.games and also DB
+        // if there are no players left, delete the game too
+        const updatedGame = await this.gameRepository.findOne({
+            where: {
+                slug: game.slug
+            },
+            relations: ['players']
+        });
+        if (updatedGame.players.length === 0) {
+            delete this.games[game.slug];
+            await this.gameRepository.remove(updatedGame);
+        }
     }
 }
