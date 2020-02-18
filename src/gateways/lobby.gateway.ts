@@ -146,8 +146,6 @@ export class LobbyGateway implements OnGatewayDisconnect {
     }
 
     async handleDisconnect(client: Socket): Promise<void> {
-        console.log(`[LOBBY] Client ${client.id} disconnected`);
-        // const slug = magic;
         const game: Game = await createQueryBuilder(Game, 'game')
             .innerJoin('game.players', 'player')
             .where('player.id = :id', { id: this.socketIdMap[client.id] })
@@ -156,16 +154,16 @@ export class LobbyGateway implements OnGatewayDisconnect {
             // just closed lobby (no game was yet created or joined)
             return;
         }
-        if (this.data[game.slug].started && !this.data[game.slug].cleaned) {
-            console.log('- Game started, client disconnected "nicely" - cleaning the maps');
-            // once the game is started, first one to disconnect will clear all data associated with that game
-            this.gameStartingClear(game.slug);
-            setTimeout(() => {
-                console.log('[LOBBY] 5 seconds passed, clearing game data');
-                delete this.data[game.slug];
-            }, 5000); // 5 seconds should be way more than needed
+        if (this.data[game.slug].started) {
+            // clean once
+            if (!this.data[game.slug].cleaned) {
+                // once the game is started, first one to disconnect will clear all data associated with that game
+                this.gameStartingClear(game.slug);
+                setTimeout(() => {
+                    delete this.data[game.slug];
+                }, 5000); // 5 seconds should be way more than needed
+            }
         } else {
-            console.log('- Game hasn\'t started yet, client closed tab');
             // game hasn't started yet, player has disconnected in lobby - remove him from DB + all associated data
             await this.removePlayerFromGame(client, game);
         }

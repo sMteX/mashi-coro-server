@@ -72,7 +72,15 @@ export class GameHandler {
     // get currentPlayerId(): number {
     //     return this.socketIdMap[this.currentPlayerSocket.id];
     // }
-
+    removePlayer(id: number): number {
+        let nextPlayer: number;
+        if (this.currentPlayerId === id) {
+            nextPlayer = this.nextPlayerId;
+        }
+        delete this.playerData[id];
+        this.playerIds = this.playerIds.filter(i => i !== id);
+        return nextPlayer;
+    }
     getPlayer(id: number|string): PlayerGameData {
         return this.playerData[id];
     }
