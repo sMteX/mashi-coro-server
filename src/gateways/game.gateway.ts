@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Server, Socket } from 'socket.io';
-import { Repository } from 'typeorm';
+import { createQueryBuilder, Repository } from 'typeorm';
 import { Game } from '@app/database/entities/game.entity';
 import { events as eventConstants } from '@utils/constants';
 import { GameHandler } from '@app/classes/gameHandler';
@@ -21,6 +21,7 @@ import {
     RollDice
 } from '@utils/interfaces/events/game/input.interface';
 import { Card, cardMap, CardName } from '@app/classes/cards';
+import { Player } from '@app/database/entities/player.entity';
 
 const { game: events } = eventConstants;
 interface GamePair {
@@ -44,41 +45,54 @@ export class GameGateway implements OnGatewayDisconnect {
     } = {};
 
     async handleDisconnect(client: Socket): Promise<void> {
-        // is all this cleanup actually breaking it all?
-        return;
+        // first - we need to map from socket ID to player ID
         if (this.socketIdMap[client.id] === undefined) {
             // the client isn't even in the map, just return, there's nothing to be done
             return;
         }
         const playerId = this.socketIdMap[client.id];
-        delete this.socketIdMap[client.id];
-        // find a game, where given player was
-        const slugAndPair = Object.entries(this.games).find(([, { game }]) => game.players.some(p => p.id === playerId));
-        if (!slugAndPair) {
-            // I don't know how this happens, but even at times where I think it should exist, it still doesn't..
-            // we end up here, if there isn't a game, that the client belongs to
-            // which I don't really know how it can happen because PLAYER_CONNECT is the first thing that happens after connecting to the gateway and player is assigned there
-            // TODO: probably safe to return then?
+        delete this.socketIdMap[client.id]; // 1)
+        // select game (and its players), which contains given player (through inner select)
+        let game: Game = await createQueryBuilder(Game, 'game')
+            .innerJoinAndSelect('game.players', 'player')
+            .where((qb) => {
+                // find given player, select game ID
+                const query = qb.subQuery()
+                    .select('player."gameId"')
+                    .from(Player, 'player')
+                    .where('player.id = :id', { id: playerId })
+                    .getQuery();
+                return `game.id = ${query}`;
+            })
+            .getOne();
+        if (!game) {
+            // if there's only one player left, we already delete the game from DB
+            // eventually the player will close the socket, but the game he was in no longer exists => game = undefined
+            // his entry in socketIdMap was already deleted, just return
             return;
         }
-        const [gameSlug, pair] = slugAndPair;
-        pair.game.players = pair.game.players.filter(p => p.id === playerId);
-        // TODO: will this work? or need to inject playerRepository?
-        await this.gameRepository.save(pair.game);
-
-        if (pair.game.players.length >= 2) {
-            // send event
-            client.to(gameSlug).emit(events.output.PLAYER_LEFT_GAME, {
-                playerId
+        // second - remove player from DB
+        game.players = game.players.filter(p => p.id !== playerId); // 2) at least it should work
+        game = await this.gameRepository.save(game);
+        this.games[game.slug].game = game;
+        // if after removing we still have 2 players, just send echo that player left (and possibly another player is on turn)
+        if (game.players.length >= 2) {
+            const newPlayer = this.h(game.slug).removePlayer(playerId);
+            if (newPlayer) {
+                this.h(game.slug).setCurrentPlayer(newPlayer);
+            }
+            client.to(game.slug).emit(events.output.PLAYER_LEFT_GAME, {
+                playerId,
+                newPlayer
             });
         } else {
-            client.to(gameSlug).emit(events.output.GAME_ENDED_EMPTY);
-            delete this.games[gameSlug];
+            const slug = game.slug;
+            delete this.games[game.slug];
             await this.gameRepository.delete({
-                slug: gameSlug
+                slug: game.slug
             });
+            client.to(slug).emit(events.output.GAME_ENDED_EMPTY);
         }
-        client.leave(gameSlug);
     }
 
     /*
