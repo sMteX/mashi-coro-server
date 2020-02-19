@@ -312,6 +312,10 @@ export class GameGateway implements OnGatewayDisconnect {
         // add card to player, remove from the table, subtract money (and add to bank)
         const game = this.h(data.game);
         game.buyCard(data.playerId, data.card);
+        this.server.in(data.game).emit(events.output.PLAYER_BOUGHT_CARD, {
+            player: data.playerId,
+            card: data.card
+        });
         // does this really return undefined if we don't have a winner? it should...
         const winner = this.h(data.game).winner;
         if (winner !== null) {
@@ -331,12 +335,7 @@ export class GameGateway implements OnGatewayDisconnect {
             await this.gameRepository.delete({
                 slug: data.game
             });
-            return;
         }
-        this.server.in(data.game).emit(events.output.PLAYER_BOUGHT_CARD, {
-            player: data.playerId,
-            card: data.card
-        });
     }
 
     @SubscribeMessage(events.input.END_TURN)
