@@ -244,7 +244,13 @@ export class GameGateway implements OnGatewayDisconnect {
                         if (game.hasActivePurpleCards()) {
                             this.server.to(`${client.id}`).emit(events.output.ACTIVE_PURPLE_CARD_WAIT);
                         } else {
-                            // TODO: check for Town Hall (before building)
+                            // Town Hall check
+                            if (game.currentPlayer.money === 0) {
+                                game.currentPlayer.money += 1;
+                                this.server.in(data.game).emit(events.output.TOWN_HALL_GAIN, {
+                                    player: data.playerId
+                                });
+                            }
                             this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
                         }
                     }, DEFAULT_DELAY);
@@ -295,13 +301,24 @@ export class GameGateway implements OnGatewayDisconnect {
                     currentPlayerMoney: handler.currentPlayer.money,
                     targetPlayerMoney: handler.getPlayer(targetPlayerId).money
                 };
+            } else if (cardEnum === CardName.WaterTreatmentPlant) {
+                const typedArgs = args as { card: CardName };
+                results[cardEnum] = {
+                    card: typedArgs.card,
+                    currentPlayerId: data.playerId,
+                    gain: afterCard[handler.currentPlayerId] - beforeCard[handler.currentPlayerId],
+                    currentPlayerMoney: handler.currentPlayer.money
+                };
             }
         });
         this.server.in(data.game).emit(events.output.ACTIVE_PURPLE_CARD_RESULT, { results });
         setTimeout(() => {
-            // TODO: technically check for Town Hall (no coins before building = 1 coin)
-            //  but I think it's not necessary = this gets triggered only if some cards are ACTUALLY triggered
-            //  and all of them somehow generate coins
+            if (handler.currentPlayer.money === 0) {
+                handler.currentPlayer.money += 1;
+                this.server.in(data.game).emit(events.output.TOWN_HALL_GAIN, {
+                    player: data.playerId
+                });
+            }
             this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
         }, DEFAULT_DELAY);
     }
@@ -342,12 +359,12 @@ export class GameGateway implements OnGatewayDisconnect {
     async endTurn(@MessageBody() data: EndTurn,
                   @ConnectedSocket() client: Socket): Promise<void> {
         const game = this.h(data.game);
-        const hasAmusementPark = game.currentPlayer.cards.hasCard(CardName.AmusementPark);
+        const hasAmusementPark = game.currentPlayer.hasCard(CardName.AmusementPark);
+        const hasAirport = game.currentPlayer.hasCard(CardName.Airport);
         const latestDice = game.mostRecentRoll.dice;
         const sameDice = latestDice.length === 2 && latestDice[0] === latestDice[1];
 
-        // TODO: check for Airport
-        // const eligibleForAirport = false;
+        const eligibleForAirport = hasAirport && !game.airportJustBought && !game.boughtCardThisTurn;
         const eligibleForAmusementPark = hasAmusementPark && sameDice && !game.amusementParkJustBought;
         const newPlayerId = game.nextPlayerId;
 
@@ -362,22 +379,23 @@ export class GameGateway implements OnGatewayDisconnect {
             this.server.in(data.game).emit(events.output.AMUSEMENT_PARK_NEW_TURN, {
                 player: data.playerId
             });
-        // const triggerAirportGain = () =>
-        //     this.server.in(data.game).emit(events.output.AIRPORT_GAIN, {
-        //         player: data.playerId
-        //     });
+        const triggerAirportGain = () => {
+            game.currentPlayer.money += 10;
+            this.server.in(data.game).emit(events.output.AIRPORT_GAIN, {
+                player: data.playerId
+            });
+        };
 
-        // if (eligibleForAirport) {
-        //     triggerAirportGain();
-        //     setTimeout(() => {
-        //         if (eligibleForAmusementPark) {
-        //             triggerAmusementPark();
-        //         } else {
-        //             triggerNewTurn();
-        //         }
-        //     }, DEFAULT_DELAY);
-        // } else
-        if (eligibleForAmusementPark) {
+        if (eligibleForAirport) {
+            triggerAirportGain();
+            setTimeout(() => {
+                if (eligibleForAmusementPark) {
+                    triggerAmusementPark();
+                } else {
+                    triggerNewTurn();
+                }
+            }, DEFAULT_DELAY);
+        } else if (eligibleForAmusementPark) {
             triggerAmusementPark();
         } else {
             triggerNewTurn();

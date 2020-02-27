@@ -335,7 +335,31 @@ export const dairyShop: Card = {
     }
 };
 
-// TODO: Water Treatment Plant
+interface WaterTreatmentPlantArgs {
+    card: CardName;
+}
+
+export const waterTreatmentPlant: Card = {
+    cardName: CardName.WaterTreatmentPlant,
+    name: 'Čistička',
+    cost: 4,
+    description: `Určete název objektu (ne však #SYMBOL_${CardSymbol.Tower}). Každý hráč (i vy) všechny tyto objekty postaví mimo provoz. Vy si za každý z nich vezměte po 1 minci z banku.`,
+    symbol: CardSymbol.Tower,
+    color: CardColor.Purple,
+    triggerNumbers: [8],
+
+    trigger (owner, { gameData, allPlayers }, args: WaterTreatmentPlantArgs) {
+        let amount = 0;
+        allPlayers.forEach((player) => {
+            if (player.isCardActive(args.card)) {
+                amount += player.cardCount(args.card);
+                player.deactivateCard(args.card);
+            }
+        });
+        owner.money += amount;
+        gameData.bank -= amount;
+    }
+};
 
 export const burgerGrill: Card = {
     cardName: CardName.BurgerGrill,
@@ -375,7 +399,7 @@ export const fishingBoat: Card = {
     name: 'Rybářský člun',
     cost: 2,
     description: 'Máte-li přístav, vezměte si 3 mince z banku',
-    symbol: CardSymbol.Cog,
+    symbol: CardSymbol.Boat,
     color: CardColor.Blue,
     triggerNumbers: [8],
 
@@ -424,7 +448,22 @@ export const mine: Card = {
     }
 };
 
-// TODO: Winery
+export const winery: Card = {
+    cardName: CardName.Winery,
+    name: 'Vinařství',
+    cost: 3,
+    description: 'Vezměte si z banku 6 mincí za každý svůj vinohrad. Vinařství poté postavte mimo provoz.',
+    symbol: CardSymbol.Factory,
+    color: CardColor.Green,
+    triggerNumbers: [9],
+
+    trigger (owner, { gameData }) {
+        const amount = owner.cardCount(CardName.Vineyard) * 6;
+        owner.money += amount;
+        gameData.bank -= amount;
+        owner.deactivateCard(CardName.Winery);
+    }
+};
 
 export const applePark: Card = {
     cardName: CardName.ApplePark,
@@ -466,6 +505,23 @@ export const logisticsCompany: Card = {
     }
 };
 
+export const itCenter: Card = {
+    cardName: CardName.ItCenter,
+    name: 'IT centrum',
+    cost: 1,
+    description: 'Na konci svého tahu můžete na tuto kartu přidat 1 svou minci. Pokud padne "10", dostanete od každého soupeře tolik mincí, kolik jich na této kartě leží.',
+    symbol: CardSymbol.Tower,
+    color: CardColor.Purple,
+    triggerNumbers: [10],
+
+    trigger (owner, { otherPlayers }) {
+        otherPlayers.forEach((player) => {
+            const amount = Math.min(owner.itCenterCoins, player.money);
+            player.money -= amount;
+            owner.money += amount;
+        });
+    }
+};
 export const restaurant: Card = {
     cardName: CardName.Restaurant,
     name: 'Restaurace',
@@ -492,12 +548,12 @@ export const sodaCompany: Card = {
     color: CardColor.Green,
     triggerNumbers: [11],
 
-    trigger (owner, handler) {
-        const amount = handler.allPlayers
+    trigger (owner, { allPlayers, gameData }) {
+        const amount = allPlayers
             .map(player => player.symbolCount(CardSymbol.Coffee))
             .reduce((acc, cur) => acc + cur, 0);
         owner.money += amount;
-        handler.gameData.bank -= amount;
+        gameData.bank -= amount;
     }
 };
 
@@ -510,16 +566,16 @@ export const park: Card = {
     color: CardColor.Purple,
     triggerNumbers: [11, 12, 13],
 
-    trigger (owner, handler) {
-        const numPlayers = handler.allPlayers.length;
-        const totalMoney = handler.allPlayers
+    trigger (owner, { allPlayers, gameData }) {
+        const numPlayers = allPlayers.length;
+        const totalMoney = allPlayers
             .map(player => player.money)
             .reduce((acc, cur) => acc + cur, 0);
         const perPlayer = Math.ceil(totalMoney / numPlayers);
         const missing = numPlayers * perPlayer - totalMoney;
 
-        handler.gameData.bank -= missing;
-        handler.allPlayers.forEach((player) => {
+        gameData.bank -= missing;
+        allPlayers.forEach((player) => {
             player.money = perPlayer;
         });
     }
@@ -697,12 +753,15 @@ export const cardMap: { [index in CardName]: Card } = {
     [CardName.Vineyard]: vineyard,
     [CardName.Pizzeria]: pizzeria,
     [CardName.DairyShop]: dairyShop,
+    [CardName.WaterTreatmentPlant]: waterTreatmentPlant,
     [CardName.BurgerGrill]: burgerGrill,
     [CardName.FurnitureFactory]: furnitureFactory,
     [CardName.FishingBoat]: fishingBoat,
     [CardName.FinancialOffice]: financialOffice,
     [CardName.Mine]: mine,
+    [CardName.Winery]: winery,
     [CardName.ApplePark]: applePark,
+    [CardName.ItCenter]: itCenter,
     [CardName.LogisticsCompany]: logisticsCompany,
     [CardName.Restaurant]: restaurant,
     [CardName.SodaCompany]: sodaCompany,

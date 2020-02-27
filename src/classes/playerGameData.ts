@@ -7,9 +7,12 @@ type AddCardsType = (Card|CardName) | [Card|CardName, number];
 export class PlayerGameData {
     money: number;
     cards: CardCollection;
+    // TODO: increment this
+    itCenterCoins: number; // don't really know where to put this as it's specific to each player and it can be active only once
 
     constructor() {
         this.money = 3;
+        this.itCenterCoins = 0;
         this.cards = new CardCollection();
         this.addCards(townHall, wheatField, bakery);
     }
@@ -28,6 +31,18 @@ export class PlayerGameData {
                 return this.hasCard(name);
             }
         }).length;
+    }
+
+    deactivateCard(card: Card|CardName): void {
+        this.cards.deactivate(card);
+    }
+
+    activateCard(card: Card|CardName): void {
+        this.cards.activate(card);
+    }
+
+    isCardActive(card: Card|CardName): boolean {
+        return this.cards.isActive(card);
     }
 
     hasCard(card: Card|CardName): boolean {

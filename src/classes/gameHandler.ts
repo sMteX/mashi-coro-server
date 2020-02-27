@@ -57,6 +57,8 @@ export class GameHandler {
         sum: number;
     };
     amusementParkJustBought: boolean = false;
+    airportJustBought: boolean = false;
+    boughtCardThisTurn: boolean = false;
 
     constructor(game: Game, server: Server, socketIdMap: { [socketId: string]: number }) {
         this.game = game;
@@ -102,6 +104,8 @@ export class GameHandler {
     setCurrentPlayer(player: number) {
         this.currentPlayerId = player;
         this.amusementParkJustBought = false;
+        this.airportJustBought = false;
+        this.boughtCardThisTurn = false;
     }
 
     get nextPlayerId(): number {
@@ -158,13 +162,17 @@ export class GameHandler {
     triggerRedCards() {
         const acOrder = this.antiClockwisePlayers(this.currentPlayerId);
         acOrder.forEach((player) => {
-            Object.entries(player.cards.cards).forEach(([cardName, count]) => {
+            Object.entries(player.cards.cards).forEach(([cardName, { active, count }]) => {
                 const card: Card = cardMap[cardName];
                 if (card.color !== CardColor.Red || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                     return;
                 }
-                for (let i = 0; i < count; i += 1) {
-                    card.trigger(player, this);
+                if (!active) {
+                    player.activateCard(card);
+                } else {
+                    for (let i = 0; i < count; i += 1) {
+                        card.trigger(player, this);
+                    }
                 }
             });
         });
@@ -173,13 +181,17 @@ export class GameHandler {
     triggerBlueCards() {
         // for each card every player has (excluding dominants), call the card's trigger()
         Object.values(this.playerData).forEach((player) => {
-            Object.entries(player.cards.cards).forEach(([cardName, count]) => {
+            Object.entries(player.cards.cards).forEach(([cardName, { active, count }]) => {
                 const card: Card = cardMap[cardName];
                 if (card.color !== CardColor.Blue || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                     return;
                 }
-                for (let i = 0; i < count; i += 1) {
-                    card.trigger(player, this);
+                if (!active) {
+                    player.activateCard(card);
+                } else {
+                    for (let i = 0; i < count; i += 1) {
+                        card.trigger(player, this);
+                    }
                 }
             });
         });
@@ -188,29 +200,37 @@ export class GameHandler {
     triggerGreenCards() {
         // for each card player has (excluding dominants), call the card's trigger()
         const player = this.currentPlayer;
-        Object.entries(player.cards.cards).forEach(([cardName, count]) => {
+        Object.entries(player.cards.cards).forEach(([cardName, { active, count }]) => {
             const card: Card = cardMap[cardName];
             if (card.color !== CardColor.Green || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                 return;
             }
-            for (let i = 0; i < count; i += 1) {
-                card.trigger(player, this);
+            if (!active) {
+                player.activateCard(card);
+            } else {
+                for (let i = 0; i < count; i += 1) {
+                    card.trigger(player, this);
+                }
             }
         });
     }
 
     triggerPassivePurpleCards() {
-        // TODO: implement Financial Office, Park and Publishing Office
-        const stadium = cardMap[CardName.Stadium];
-        if (this.currentPlayer.hasCard(stadium) && stadium.triggerNumbers.includes(this.mostRecentRoll.sum)) {
-            stadium.trigger(this.currentPlayer, this);
-        }
+        const cards = [CardName.Stadium, CardName.FinancialOffice, CardName.Park, CardName.PublishingHouse, CardName.ItCenter];
+        cards.forEach((cardName) => {
+            const card = cardMap[cardName];
+            if (this.currentPlayer.hasCard(cardName) && card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
+                card.trigger(this.currentPlayer, this);
+            }
+        });
     }
 
     hasActivePurpleCards(): boolean {
-        // TODO: add Water Treatment Plant (IT Center is special of specials, it can be triggered passively)
-        const activeCards = [CardName.TelevisionStudio, CardName.OfficeBuilding];
-        return this.mostRecentRoll.sum === 6 && activeCards.some(card => this.currentPlayer.hasCard(card));
+        const activeCards = [CardName.TelevisionStudio, CardName.OfficeBuilding, CardName.WaterTreatmentPlant];
+        return activeCards.some((cardName) => {
+            const card = cardMap[cardName];
+            return this.currentPlayer.hasCard(cardName) && card.triggerNumbers.includes(this.mostRecentRoll.sum);
+        });
     }
 
     setTargetPlayer(id: number) {
@@ -238,11 +258,13 @@ export class GameHandler {
         this.playerData[playerId].money -= cardObj.cost;
         this.gameData.bank += cardObj.cost;
 
+        this.boughtCardThisTurn = true;
         // flags to disable a dominant's effect the turn it's been bought:
         if (card === CardName.AmusementPark) {
             this.amusementParkJustBought = true;
+        } else if (card === CardName.Airport) {
+            this.airportJustBought = true;
         }
-        // TODO: Airport in the same fashion
     }
 
     rollDice(amount: number): number[] {
