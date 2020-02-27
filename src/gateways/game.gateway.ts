@@ -13,12 +13,12 @@ import { Game } from '@app/database/entities/game.entity';
 import { events as eventConstants } from '@utils/constants';
 import { GameHandler } from '@app/classes/gameHandler';
 import {
-    ActivePurpleCardsInput,
+    ActivePurpleCardsInput, AddTwo,
     BuyCard,
     EndRoll,
     EndTurn,
     PlayerConnect,
-    RollDice
+    RollDice,
 } from '@utils/interfaces/events/game/input.interface';
 import { Card, cardMap, CardName } from '@app/classes/cards';
 import { Player } from '@app/database/entities/player.entity';
@@ -150,15 +150,29 @@ export class GameGateway implements OnGatewayDisconnect {
         });
     }
 
+    @SubscribeMessage(events.input.ADD_TWO)
+    async addTwo(@MessageBody() data: AddTwo,
+                 @ConnectedSocket() client: Socket): Promise<void> {
+        this.h(data.game).mostRecentRoll.sum += 2;
+        this.server.in(data.game).emit(events.output.ADDED_TWO, {
+            sum: this.h(data.game).mostRecentRoll.sum,
+            player: data.playerId
+        });
+        // TODO: will this work?
+        setTimeout(async () => {
+            await this.endRollAndTriggerCards(data, client);
+        }, DEFAULT_DELAY);
+    }
+
     @SubscribeMessage(events.input.END_ROLL)
     async endRollAndTriggerCards(@MessageBody() data: EndRoll,
                                  @ConnectedSocket() client: Socket): Promise<void> {
         const game = this.h(data.game);
-        const latestRoll = game.mostRecentRoll.dice;
+        const latestRoll = game.mostRecentRoll;
         this.server.in(data.game).emit(events.output.FINAL_DICE_ROLL, {
             player: data.playerId,
-            dice: latestRoll,
-            sum: latestRoll[0] + (latestRoll.length > 1 ? latestRoll[1] : 0)
+            dice: latestRoll.dice,
+            sum: latestRoll.sum
         });
         setTimeout(() => {
             const beforeRed: { [p: number]: number } = game.currentPlayerMoneyMap;
@@ -359,6 +373,15 @@ export class GameGateway implements OnGatewayDisconnect {
     async endTurn(@MessageBody() data: EndTurn,
                   @ConnectedSocket() client: Socket): Promise<void> {
         const game = this.h(data.game);
+
+        if (data.useItCenter) {
+            game.currentPlayer.money -= 1;
+            game.currentPlayer.itCenterCoins += 1;
+            this.server.in(data.game).emit(events.output.IT_CENTER_COIN, {
+                player: data.playerId
+            });
+        }
+
         const hasAmusementPark = game.currentPlayer.hasCard(CardName.AmusementPark);
         const hasAirport = game.currentPlayer.hasCard(CardName.Airport);
         const latestDice = game.mostRecentRoll.dice;
