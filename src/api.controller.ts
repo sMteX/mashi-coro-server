@@ -2,6 +2,9 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { Game } from '@app/database/entities/game.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Validator } from 'class-validator';
+
+const validator = new Validator();
 
 @Controller('api')
 export class ApiController {
@@ -19,6 +22,9 @@ export class ApiController {
 
     @Post('/validateGame')
     async validateGameSlug(@Body() data: { slug: string; }): Promise<{success: boolean, full?: boolean}> {
+        if (!validator.isUUID(data.slug)) {
+            return { success: false, full: false };
+        }
         // TODO: verify if the slug is correct and the game is playable probably
         const game = await this.gameRepository.findOne({
             where: {
