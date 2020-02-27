@@ -85,6 +85,10 @@ export class GameHandler {
         return this.playerData[id];
     }
 
+    get allPlayers(): PlayerGameData[] {
+        return Object.values(this.playerData);
+    }
+
     get currentPlayer(): PlayerGameData {
         return this.getPlayer(this.currentPlayerId);
     }

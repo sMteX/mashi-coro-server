@@ -1,7 +1,4 @@
-import {
-    bakery, wheatField,
-    dominants, Card, CardName, CardSymbol
-} from './cards';
+import { bakery, Card, CardName, CardSymbol, dominants, townHall, wheatField } from './cards';
 import { CardCollection } from '@app/classes/cardCollection';
 
 // TODO: duplicate in cardCollection
@@ -14,11 +11,23 @@ export class PlayerGameData {
     constructor() {
         this.money = 3;
         this.cards = new CardCollection();
-        this.addCards(wheatField, bakery);
+        this.addCards(townHall, wheatField, bakery);
     }
 
     doesWin(): boolean {
         return dominants.map(card => card.cardName).every(name => this.hasCard(name));
+    }
+
+    dominantCount(withTownHall: boolean = false): number {
+        return dominants.map(card => card.cardName).filter((name) => {
+            if (name === CardName.TownHall) {
+                if (withTownHall) {
+                    return this.hasCard(name);
+                }
+            } else {
+                return this.hasCard(name);
+            }
+        }).length;
     }
 
     hasCard(card: Card|CardName): boolean {
