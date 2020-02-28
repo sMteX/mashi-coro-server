@@ -222,7 +222,15 @@ export class GameGateway implements OnGatewayDisconnect {
                     const beforeGreen = game.currentPlayer.money;
                     game.triggerGreenCards();
                     const afterGreen = game.currentPlayer.money;
+
+                    let wineryToggled = false;
+                    if (game.isCardActivated(CardName.Winery)) {
+                        // Winery was activated (or deactivated), toggle it on the client too
+                        wineryToggled = true;
+                    }
+
                     this.server.in(data.game).emit(events.output.GREEN_CARD_EFFECTS, {
+                        wineryToggled,
                         player: data.playerId,
                         newMoney: afterGreen,
                         gains: afterGreen - beforeGreen

@@ -239,6 +239,10 @@ export class GameHandler {
         });
     }
 
+    isCardActivated (card: CardName): boolean {
+        return this.currentPlayer.hasCard(card) && cardMap[card].triggerNumbers.includes(this.mostRecentRoll.sum);
+    }
+
     setTargetPlayer(id: number) {
         this.targetPlayer = this.playerData[id];
     }
