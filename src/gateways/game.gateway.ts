@@ -316,9 +316,9 @@ export class GameGateway implements OnGatewayDisconnect {
                     targetPlayerMoney: handler.getPlayer(targetPlayerId).money
                 };
             } else if (cardEnum === CardName.WaterTreatmentPlant) {
-                const typedArgs = args as { card: CardName };
+                const card = args as CardName;
                 results[cardEnum] = {
-                    card: typedArgs.card,
+                    card,
                     currentPlayerId: data.playerId,
                     gain: afterCard[handler.currentPlayerId] - beforeCard[handler.currentPlayerId],
                     currentPlayerMoney: handler.currentPlayer.money

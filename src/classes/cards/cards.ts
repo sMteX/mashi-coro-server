@@ -335,10 +335,6 @@ export const dairyShop: Card = {
     }
 };
 
-interface WaterTreatmentPlantArgs {
-    card: CardName;
-}
-
 export const waterTreatmentPlant: Card = {
     cardName: CardName.WaterTreatmentPlant,
     name: 'Čistička',
@@ -348,12 +344,12 @@ export const waterTreatmentPlant: Card = {
     color: CardColor.Purple,
     triggerNumbers: [8],
 
-    trigger (owner, { gameData, allPlayers }, args: WaterTreatmentPlantArgs) {
+    trigger (owner, { gameData, allPlayers }, card: CardName) {
         let amount = 0;
         allPlayers.forEach((player) => {
-            if (player.isCardActive(args.card)) {
-                amount += player.cardCount(args.card);
-                player.deactivateCard(args.card);
+            if (player.isCardActive(card)) {
+                amount += player.cardCount(card);
+                player.deactivateCard(card);
             }
         });
         owner.money += amount;
