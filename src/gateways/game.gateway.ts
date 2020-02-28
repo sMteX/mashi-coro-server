@@ -227,6 +227,7 @@ export class GameGateway implements OnGatewayDisconnect {
                         newMoney: afterGreen,
                         gains: afterGreen - beforeGreen
                     });
+                    // TODO: Logistics company - WAIT FOR INPUT, just like purple cards
 
                     setTimeout(() => {
                         const beforePassivePurple = game.currentPlayerMoneyMap;

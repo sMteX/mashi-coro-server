@@ -196,6 +196,9 @@ export const flowerShop: Card = {
     triggerNumbers: [6],
 
     trigger (owner, { gameData }) {
+        if (!owner.isCardActive(CardName.FlowerGarden)) {
+            return; // Flower Gardens are deactivated, we get nothing
+        }
         let amount = owner.cardCount(CardName.FlowerGarden);
         if (owner.hasCard(CardName.ShoppingCenter)) {
             amount += 1;
@@ -279,6 +282,7 @@ export const publishingHouse: Card = {
 
     trigger (owner, { otherPlayers }) {
         otherPlayers.forEach((player) => {
+            // exception - deactivated cards also count
             const amount = player.symbolCount(CardSymbol.Coffee) + player.symbolCount(CardSymbol.Box);
             const realAmount = Math.min(amount, player.money);
             player.money -= realAmount;
@@ -329,6 +333,9 @@ export const dairyShop: Card = {
     triggerNumbers: [7],
 
     trigger (owner, { gameData }) {
+        if (!owner.isCardActive(CardName.Farm)) {
+            return; // AFAIK only card with pig symbol - if it's deactivated, we get nothing
+        }
         const symbolCount = owner.symbolCount(CardSymbol.Pig);
         owner.money += symbolCount * 3;
         gameData.bank -= symbolCount * 3;
@@ -384,9 +391,14 @@ export const furnitureFactory: Card = {
     triggerNumbers: [8],
 
     trigger (owner, { gameData }) {
-        const symbolCount = owner.symbolCount(CardSymbol.Cog);
-        owner.money += symbolCount * 3;
-        gameData.bank -= symbolCount * 3;
+        let cardCount = 0;
+        [CardName.Forest, CardName.Mine].forEach((card) => {
+            if (owner.isCardActive(card)) {
+                cardCount += owner.cardCount(card);
+            }
+        });
+        owner.money += cardCount * 3;
+        gameData.bank -= cardCount * 3;
     }
 };
 
@@ -454,9 +466,11 @@ export const winery: Card = {
     triggerNumbers: [9],
 
     trigger (owner, { gameData }) {
-        const amount = owner.cardCount(CardName.Vineyard) * 6;
-        owner.money += amount;
-        gameData.bank -= amount;
+        if (owner.isCardActive(CardName.Vineyard)) {
+            const amount = owner.cardCount(CardName.Vineyard) * 6;
+            owner.money += amount;
+            gameData.bank -= amount;
+        }
         owner.deactivateCard(CardName.Winery);
     }
 };
@@ -475,8 +489,6 @@ export const applePark: Card = {
         gameData.bank -= 3;
     }
 };
-
-// TODO: IT Center
 
 interface LogisticsCompanyArgs {
     targetPlayerId: number;
@@ -518,6 +530,7 @@ export const itCenter: Card = {
         });
     }
 };
+
 export const restaurant: Card = {
     cardName: CardName.Restaurant,
     name: 'Restaurace',
@@ -545,9 +558,15 @@ export const sodaCompany: Card = {
     triggerNumbers: [11],
 
     trigger (owner, { allPlayers, gameData }) {
-        const amount = allPlayers
-            .map(player => player.symbolCount(CardSymbol.Coffee))
-            .reduce((acc, cur) => acc + cur, 0);
+        const coffeeCards = [CardName.SushiBar, CardName.CoffeeShop, CardName.LuxuriousRestaurant, CardName.Pizzeria, CardName.BurgerGrill, CardName.Restaurant, CardName.NightClub];
+        let amount = 0;
+        allPlayers.forEach((player) => {
+            coffeeCards.forEach((card) => {
+                if (player.isCardActive(card)) {
+                    amount += player.cardCount(card);
+                }
+            });
+        });
         owner.money += amount;
         gameData.bank -= amount;
     }
@@ -587,9 +606,15 @@ export const mall: Card = {
     triggerNumbers: [11, 12],
 
     trigger (owner, { gameData }) {
-        const symbolCount = owner.symbolCount(CardSymbol.Wheat);
-        owner.money += symbolCount * 2;
-        gameData.bank -= symbolCount * 2;
+        const wheatCards = [CardName.WheatField, CardName.CornField, CardName.FlowerGarden, CardName.Vineyard, CardName.ApplePark];
+        let cardCount = 0;
+        wheatCards.forEach((card) => {
+            if (owner.isCardActive(card)) {
+                cardCount += owner.cardCount(card);
+            }
+        });
+        owner.money += cardCount * 2;
+        gameData.bank -= cardCount * 2;
     }
 };
 
@@ -603,9 +628,15 @@ export const foodWholesale: Card = {
     triggerNumbers: [12, 13],
 
     trigger (owner, { gameData }) {
-        const amount = owner.symbolCount(CardSymbol.Coffee) * 2;
-        owner.money += amount;
-        gameData.bank -= amount;
+        const coffeeCards = [CardName.SushiBar, CardName.CoffeeShop, CardName.LuxuriousRestaurant, CardName.Pizzeria, CardName.BurgerGrill, CardName.Restaurant, CardName.NightClub];
+        let amount = 0;
+        coffeeCards.forEach((card) => {
+            if (owner.isCardActive(card)) {
+                amount += owner.cardCount(card);
+            }
+        });
+        owner.money += amount * 2;
+        gameData.bank -= amount * 2;
     }
 };
 
