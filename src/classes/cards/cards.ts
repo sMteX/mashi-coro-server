@@ -226,8 +226,7 @@ export const stadium: Card = {
         });
     }
 };
-// TODO: these two require special communication - choosing target player
-//  works now, but we need something more general for other cards too
+
 export const televisionStudio: Card = {
     cardName: CardName.TelevisionStudio,
     name: 'Televizní studio',

@@ -7,7 +7,6 @@ type AddCardsType = (Card|CardName) | [Card|CardName, number];
 export class PlayerGameData {
     money: number;
     cards: CardCollection;
-    // TODO: increment this
     itCenterCoins: number; // don't really know where to put this as it's specific to each player and it can be active only once
 
     constructor() {

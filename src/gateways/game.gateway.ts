@@ -242,12 +242,13 @@ export class GameGateway implements OnGatewayDisconnect {
                         game.triggerPassivePurpleCards();
                         const afterPassivePurple = game.currentPlayerMoneyMap;
 
+                        // this tells us, that Park was activated (and all players' coins have been rebalanced), use different message on client
+                        const parkActivated = game.isCardActivated(CardName.Park);
+
                         const passivePurpleResult = {};
                         Object.keys(afterPassivePurple).forEach((id: string) => {
                             if (Number(id) === data.playerId) {
                                 // we only care about our gains
-                                // TODO: rework after Park is implemented (balancing all players' coins)
-                                // or just send all the data all the time and let client handle the display..
                                 passivePurpleResult[id] = {
                                     gains: afterPassivePurple[id] - beforePassivePurple[id],
                                     newMoney: afterPassivePurple[id]
@@ -260,6 +261,7 @@ export class GameGateway implements OnGatewayDisconnect {
                         });
 
                         this.server.in(data.game).emit(events.output.PASSIVE_PURPLE_CARD_EFFECTS, {
+                            parkActivated,
                             result: passivePurpleResult,
                             player: data.playerId
                         });
