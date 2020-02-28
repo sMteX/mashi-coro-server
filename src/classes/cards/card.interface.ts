@@ -59,7 +59,7 @@ export enum CardName {
     Mall,
     FoodWholesale,
     NightClub,
-    // FishingShip,
+    FishingShip,
 
     TownHall,
     Port,

@@ -632,7 +632,24 @@ export const nightClub: Card = {
     }
 };
 
-// TODO: Fishing Ship
+export const fishingShip: Card = {
+    cardName: CardName.FishingShip,
+    name: 'Rybářská loď',
+    cost: 5,
+    description: 'Máte-li přístav, hodí hráč na tahu dvěma kostkami. Vezměte si tolik mincí z banku, kolik na kostkách padlo.',
+    symbol: CardSymbol.Boat,
+    color: CardColor.Blue,
+    triggerNumbers: [12, 13, 14],
+
+    // amount is pre-generated in gameHandler and is the same for all players with this card
+    trigger (owner, { gameData }, amount: number) {
+        if (!owner.hasCard(CardName.Port)) {
+            return;
+        }
+        gameData.bank -= amount;
+        owner.money += amount;
+    }
+};
 
 // Winning cards
 export const townHall: Card = {
@@ -769,6 +786,7 @@ export const cardMap: { [index in CardName]: Card } = {
     [CardName.Mall]: mall,
     [CardName.FoodWholesale]: foodWholesale,
     [CardName.NightClub]: nightClub,
+    [CardName.FishingShip]: fishingShip,
 
     [CardName.TownHall]: townHall,
     [CardName.Port]: port,

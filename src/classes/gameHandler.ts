@@ -179,6 +179,9 @@ export class GameHandler {
     }
 
     triggerBlueCards() {
+        // Fishing Ship has a little different flow - the card gets triggered with the same dice roll for everyone
+        // we assume that someone has it, pre-generate 2 dice roll, and trigger the card with that particular roll
+        const fishingShipRoll = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1;
         // for each card every player has (excluding dominants), call the card's trigger()
         Object.values(this.playerData).forEach((player) => {
             Object.entries(player.cards.cards).forEach(([cardName, { active, count }]) => {
@@ -190,6 +193,9 @@ export class GameHandler {
                     player.activateCard(card);
                 } else {
                     for (let i = 0; i < count; i += 1) {
+                        if (card.cardName === CardName.FishingShip) {
+                            card.trigger(player, this, fishingShipRoll);
+                        }
                         card.trigger(player, this);
                     }
                 }
