@@ -23,6 +23,7 @@ export const events = {
             DICE_ROLL: 'diceRoll', // beginning of the turn
             ADD_TWO: 'addTwo',
             END_ROLL: 'endRoll',
+            LOGISTIC_COMPANY_INPUT: 'logisticCompanyInput',
             ACTIVE_PURPLE_CARDS_INPUT: 'activePurpleCardsInput',
             BUY_CARD: 'buyCard',
             END_TURN: 'endTurn'
@@ -36,6 +37,8 @@ export const events = {
             RED_CARD_EFFECTS: 'redCardEffects',
             BLUE_CARD_EFFECTS: 'blueCardEffects',
             GREEN_CARD_EFFECTS: 'greenCardEffects',
+            LOGISTICS_COMPANY_WAIT: 'logisticsCompanyWait',
+            LOGISTICS_COMPANY_RESULT: 'logisticsCompanyResult',
             PASSIVE_PURPLE_CARD_EFFECTS: 'passivePurpleCardEffects',
             ACTIVE_PURPLE_CARD_WAIT: 'activePurpleCardWait',
             ACTIVE_PURPLE_CARD_RESULT: 'activePurpleCardResult',

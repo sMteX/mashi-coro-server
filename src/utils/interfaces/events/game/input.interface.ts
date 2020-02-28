@@ -19,6 +19,10 @@ export interface AddTwo extends BaseGameInput {}
 
 export interface EndRoll extends BaseGameInput {}
 
+export interface LogisticCompanyInput extends BaseGameInput {
+    args: { player: number; card: CardName }[];
+}
+
 export interface ActivePurpleCardsInput extends BaseGameInput {
     inputs: { [card in CardName]?: any };
 }

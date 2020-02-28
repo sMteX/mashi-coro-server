@@ -16,7 +16,7 @@ import {
     ActivePurpleCardsInput, AddTwo,
     BuyCard,
     EndRoll,
-    EndTurn,
+    EndTurn, LogisticCompanyInput,
     PlayerConnect,
     RollDice,
 } from '@utils/interfaces/events/game/input.interface';
@@ -234,53 +234,81 @@ export class GameGateway implements OnGatewayDisconnect {
                         newMoney: afterGreen,
                         gains: afterGreen - beforeGreen
                     });
-                    // TODO: Logistics company - WAIT FOR INPUT, just like purple cards
 
-                    setTimeout(() => {
-                        const beforePassivePurple = game.currentPlayerMoneyMap;
-                        game.triggerPassivePurpleCards();
-                        const afterPassivePurple = game.currentPlayerMoneyMap;
-
-                        // this tells us, that Park was activated (and all players' coins have been rebalanced), use different message on client
-                        const parkActivated = game.isCardActivated(CardName.Park);
-
-                        const passivePurpleResult = {};
-                        Object.keys(afterPassivePurple).forEach((id: string) => {
-                            if (Number(id) === data.playerId) {
-                                // we only care about our gains
-                                passivePurpleResult[id] = {
-                                    gains: afterPassivePurple[id] - beforePassivePurple[id],
-                                    newMoney: afterPassivePurple[id]
-                                };
-                            } else {
-                                passivePurpleResult[id] = {
-                                    newMoney: afterPassivePurple[id]
-                                };
-                            }
-                        });
-
-                        this.server.in(data.game).emit(events.output.PASSIVE_PURPLE_CARD_EFFECTS, {
-                            parkActivated,
-                            result: passivePurpleResult,
-                            player: data.playerId
-                        });
-
-                        if (game.hasActivePurpleCards()) {
-                            this.server.to(`${client.id}`).emit(events.output.ACTIVE_PURPLE_CARD_WAIT);
-                        } else {
-                            // Town Hall check
-                            if (game.currentPlayer.money === 0) {
-                                game.currentPlayer.money += 1;
-                                this.server.in(data.game).emit(events.output.TOWN_HALL_GAIN, {
-                                    player: data.playerId
-                                });
-                            }
-                            this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
-                        }
-                    }, DEFAULT_DELAY);
+                    if (game.isCardActivated(CardName.LogisticsCompany)) {
+                        // TODO: Logistics company - WAIT FOR INPUT, just like purple cards
+                        this.server.to(`${client.id}`).emit(events.output.LOGISTICS_COMPANY_WAIT);
+                    } else {
+                        setTimeout(() => {
+                            // this logic is repeated either here or after we received the input from Logistic company
+                            this.triggerPurpleCards(data, client);
+                        }, DEFAULT_DELAY);
+                    }
                 }, DEFAULT_DELAY);
             }, DEFAULT_DELAY);
         }, DEFAULT_DELAY);
+    }
+
+    @SubscribeMessage(events.input.LOGISTIC_COMPANY_INPUT)
+    logisticCompanyInput(@MessageBody() data: LogisticCompanyInput,
+                         @ConnectedSocket() client: Socket): void {
+        const game = this.h(data.game);
+        // this should arrive only if it's actually not empty
+        data.args.forEach(({ player, card: cardName }) => {
+            const card: Card = cardMap[cardName];
+            card.trigger(game.currentPlayer, game, { targetPlayerId: player, card: cardName });
+        });
+        this.server.in(data.game).emit(events.output.LOGISTICS_COMPANY_RESULT, {
+            sourcePlayer: data.playerId,
+            playersAndCards: data.args
+        });
+        setTimeout(() => {
+            this.triggerPurpleCards(data, client);
+        }, DEFAULT_DELAY);
+    }
+
+    triggerPurpleCards(data: EndRoll, client: Socket): void {
+        const game = this.h(data.game);
+        const beforePassivePurple = game.currentPlayerMoneyMap;
+        game.triggerPassivePurpleCards();
+        const afterPassivePurple = game.currentPlayerMoneyMap;
+
+        // this tells us, that Park was activated (and all players' coins have been rebalanced), use different message on client
+        const parkActivated = game.isCardActivated(CardName.Park);
+
+        const passivePurpleResult = {};
+        Object.keys(afterPassivePurple).forEach((id: string) => {
+            if (Number(id) === data.playerId) {
+                // we only care about our gains
+                passivePurpleResult[id] = {
+                    gains: afterPassivePurple[id] - beforePassivePurple[id],
+                    newMoney: afterPassivePurple[id]
+                };
+            } else {
+                passivePurpleResult[id] = {
+                    newMoney: afterPassivePurple[id]
+                };
+            }
+        });
+
+        this.server.in(data.game).emit(events.output.PASSIVE_PURPLE_CARD_EFFECTS, {
+            parkActivated,
+            result: passivePurpleResult,
+            player: data.playerId
+        });
+
+        if (game.hasActivePurpleCards()) {
+            this.server.to(`${client.id}`).emit(events.output.ACTIVE_PURPLE_CARD_WAIT);
+        } else {
+            // Town Hall check
+            if (game.currentPlayer.money === 0) {
+                game.currentPlayer.money += 1;
+                this.server.in(data.game).emit(events.output.TOWN_HALL_GAIN, {
+                    player: data.playerId
+                });
+            }
+            this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
+        }
     }
 
     @SubscribeMessage(events.input.ACTIVE_PURPLE_CARDS_INPUT)
