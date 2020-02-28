@@ -17,6 +17,10 @@ export class CardCollection {
         return typeof card === 'object' ? card.cardName : card;
     }
 
+    get uniqueCardCount (): number {
+        return Object.keys(this.cards).length;
+    }
+
     deactivate(card: Card|CardName): void {
         const name = this.getName(card);
         if (this.cards[name]) {

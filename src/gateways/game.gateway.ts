@@ -131,7 +131,6 @@ export class GameGateway implements OnGatewayDisconnect {
             this.server.in(data.game).emit(events.output.GAME_DATA_LOAD, gameStartingData);
 
             setTimeout(() => {
-                this.h(data.game).startGame();
                 this.server.in(data.game).emit(events.output.GAME_STARTING);
             }, DEFAULT_DELAY);
         }
@@ -353,8 +352,9 @@ export class GameGateway implements OnGatewayDisconnect {
                   @ConnectedSocket() client: Socket): Promise<void> {
         // add card to player, remove from the table, subtract money (and add to bank)
         const game = this.h(data.game);
-        game.buyCard(data.playerId, data.card);
+        const drawnCards = game.buyCard(data.playerId, data.card);
         this.server.in(data.game).emit(events.output.PLAYER_BOUGHT_CARD, {
+            drawnCards,
             player: data.playerId,
             card: data.card
         });
