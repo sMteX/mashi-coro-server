@@ -200,6 +200,9 @@ export const flowerShop: Card = {
             return; // Flower Gardens are deactivated, we get nothing
         }
         let amount = owner.cardCount(CardName.FlowerGarden);
+        if (amount === 0) {
+            return;
+        }
         if (owner.hasCard(CardName.ShoppingCenter)) {
             amount += 1;
         }
