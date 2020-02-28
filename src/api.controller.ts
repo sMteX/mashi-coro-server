@@ -14,7 +14,6 @@ export class ApiController {
 
     @Post('/createGame')
     async createGame(): Promise<string> {
-        // TODO: Step 2 - create game, send some sort of token back
         let game = new Game();
         game = await this.gameRepository.save(game);
         return game.slug;
@@ -25,7 +24,6 @@ export class ApiController {
         if (!validator.isUUID(data.slug)) {
             return { success: false, full: false };
         }
-        // TODO: verify if the slug is correct and the game is playable probably
         const game = await this.gameRepository.findOne({
             where: {
                 slug: data.slug
