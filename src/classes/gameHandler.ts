@@ -365,6 +365,36 @@ export class GameHandler {
             purpleCards
         };
     }
+    testGenerateStartingCards () {
+        const lowCards: {[card in CardName]?: number} = {};
+        const highCards: {[card in CardName]?: number} = {};
+        const purpleCards: {[card in CardName]?: number} = {};
+        const avg = (a: number[]) => a.reduce((acc, cur) => acc + cur, 0) / (a.length || 1);
+        // Get all the cards
+        Object.values(cardMap).forEach((card) => {
+            if (card.color === CardColor.Dominant) {
+                return;
+            }
+            if (card.color === CardColor.Purple) {
+                this.gameData.purpleCardsPile.push(...Array(4).fill(card.cardName));
+                purpleCards[card.cardName] = 4;
+                return;
+            }
+            const repeatedCards = Array(6).fill(card.cardName);
+            if (avg(card.triggerNumbers) <= 6) {
+                this.gameData.lowCardsPile.push(...repeatedCards);
+                lowCards[card.cardName] = 6;
+            } else {
+                this.gameData.highCardsPile.push(...repeatedCards);
+                highCards[card.cardName] = 6;
+            }
+        });
+        return {
+            lowCards,
+            highCards,
+            purpleCards
+        };
+    }
 
     constructInitialData() {
         const idSocketMap = {};
@@ -387,6 +417,7 @@ export class GameHandler {
 
         // generate buyable cards, save them here in handler and also send to the clients
         const { lowCards, highCards, purpleCards } = this.generateStartingCards();
+        // const { lowCards, highCards, purpleCards } = this.testGenerateStartingCards();
         Object.entries(lowCards).forEach(([cardName, count]) => {
             const cardEnum = Number(cardName) as CardName;
             this.gameData.lowCards.addCard(cardEnum, count);
