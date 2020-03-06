@@ -1,4 +1,4 @@
-import { Card, CardColor, CardName, CardSymbol } from './card.interface';
+import { Card, CardColor, CardName, CardSymbol, redCards } from './card.interface';
 
 export const wheatField: Card = {
     cardName: CardName.WheatField,
@@ -560,10 +560,9 @@ export const sodaCompany: Card = {
     triggerNumbers: [11],
 
     trigger (owner, { allPlayers, gameData }) {
-        const coffeeCards = [CardName.SushiBar, CardName.CoffeeShop, CardName.LuxuriousRestaurant, CardName.Pizzeria, CardName.BurgerGrill, CardName.Restaurant, CardName.NightClub];
         let amount = 0;
         allPlayers.forEach((player) => {
-            coffeeCards.forEach((card) => {
+            redCards.forEach((card) => {
                 if (player.isCardActive(card)) {
                     amount += player.cardCount(card);
                 }
@@ -630,9 +629,8 @@ export const foodWholesale: Card = {
     triggerNumbers: [12, 13],
 
     trigger (owner, { gameData }) {
-        const coffeeCards = [CardName.SushiBar, CardName.CoffeeShop, CardName.LuxuriousRestaurant, CardName.Pizzeria, CardName.BurgerGrill, CardName.Restaurant, CardName.NightClub];
         let amount = 0;
-        coffeeCards.forEach((card) => {
+        redCards.forEach((card) => {
             if (owner.isCardActive(card)) {
                 amount += owner.cardCount(card);
             }
@@ -826,8 +824,4 @@ export const cardMap: { [index in CardName]: Card } = {
     [CardName.Airport]: airport
 };
 
-// TODO: new cards are missing here, but so far it hasn't been used anyway
-export const normalCards: Card[] =
-    [wheatField, farm, bakery, coffeeShop, shop, forest, stadium, televisionStudio,
-        officeBuilding, dairyShop, furnitureFactory, mine, applePark, restaurant, mall];
 export const dominants: Card[] = [townHall, port, station, shoppingCenter, amusementPark, transmitter, airport];

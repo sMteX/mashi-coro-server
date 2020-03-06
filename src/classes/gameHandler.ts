@@ -2,7 +2,16 @@ import * as _ from 'lodash';
 import { Server } from 'socket.io';
 import { Game } from '@app/database/entities/game.entity';
 import { PlayerGameData } from './playerGameData';
-import { Card, CardColor, cardMap, CardName, dominants } from './cards';
+import {
+    activePurpleCards, blueCards,
+    Card,
+    CardColor,
+    cardMap,
+    CardName,
+    dominants, greenCards,
+    passivePurpleCards,
+    redCards,
+} from './cards';
 import { CardCollection } from '@app/classes/cardCollection';
 
 class GameData {
@@ -230,8 +239,7 @@ export class GameHandler {
     }
 
     triggerPassivePurpleCards() {
-        const cards = [CardName.Stadium, CardName.FinancialOffice, CardName.Park, CardName.PublishingHouse, CardName.ItCenter];
-        cards.forEach((cardName) => {
+        passivePurpleCards.forEach((cardName) => {
             const card = cardMap[cardName];
             if (this.currentPlayer.hasCard(cardName) && card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                 card.trigger(this.currentPlayer, this);
@@ -239,16 +247,28 @@ export class GameHandler {
         });
     }
 
-    hasActivePurpleCards(): boolean {
-        const activeCards = [CardName.TelevisionStudio, CardName.OfficeBuilding, CardName.WaterTreatmentPlant];
-        return activeCards.some((cardName) => {
-            const card = cardMap[cardName];
-            return this.currentPlayer.hasCard(cardName) && card.triggerNumbers.includes(this.mostRecentRoll.sum);
-        });
+    anyRedCardsTriggered(): boolean {
+        return this.otherPlayers.some(player => redCards.some(card => this.isCardActivated(card, player)));
     }
 
-    isCardActivated (card: CardName): boolean {
-        return this.currentPlayer.hasCard(card) && cardMap[card].triggerNumbers.includes(this.mostRecentRoll.sum);
+    anyBlueCardsTriggered(): boolean {
+        return this.allPlayers.some(player => blueCards.some(card => this.isCardActivated(card, player)));
+    }
+
+    anyGreenCardsTriggered(): boolean {
+        return greenCards.some(card => this.isCardActivated(card));
+    }
+
+    anyPassivePurpleCardsTriggered(): boolean {
+        return passivePurpleCards.some(card => this.isCardActivated(card));
+    }
+
+    anyActivePurpleCardsTriggered(): boolean {
+        return activePurpleCards.some(card => this.isCardActivated(card));
+    }
+
+    isCardActivated (card: CardName, player: PlayerGameData = this.currentPlayer): boolean {
+        return player.hasCard(card) && cardMap[card].triggerNumbers.includes(this.mostRecentRoll.sum);
     }
 
     setTargetPlayer(id: number) {

@@ -18,7 +18,7 @@ import {
     EndRoll,
     EndTurn, LogisticCompanyInput,
     PlayerConnect,
-    RollDice,
+    RollDice
 } from '@utils/interfaces/events/game/input.interface';
 import { Card, cardMap, CardName } from '@app/classes/cards';
 import { Player } from '@app/database/entities/player.entity';
@@ -137,8 +137,8 @@ export class GameGateway implements OnGatewayDisconnect {
     }
 
     @SubscribeMessage(events.input.DICE_ROLL)
-    async diceRoll(@MessageBody() data: RollDice,
-                   @ConnectedSocket() client: Socket): Promise<void> {
+    diceRoll(@MessageBody() data: RollDice,
+                   @ConnectedSocket() client: Socket): void {
         // assume we can't call this in wrong situation - no checks for not having the specific cards
         const dice = this.h(data.game).rollDice(data.diceCount);
         this.server.in(data.game).emit(events.output.DICE_ROLL_OUTPUT, {
@@ -150,30 +150,34 @@ export class GameGateway implements OnGatewayDisconnect {
     }
 
     @SubscribeMessage(events.input.ADD_TWO)
-    async addTwo(@MessageBody() data: AddTwo,
-                 @ConnectedSocket() client: Socket): Promise<void> {
+    addTwo(@MessageBody() data: AddTwo,
+                 @ConnectedSocket() client: Socket): void {
         this.h(data.game).mostRecentRoll.sum += 2;
         this.server.in(data.game).emit(events.output.ADDED_TWO, {
             sum: this.h(data.game).mostRecentRoll.sum,
             player: data.playerId
         });
         // TODO: will this work?
-        setTimeout(async () => {
-            await this.endRollAndTriggerCards(data, client);
-        }, DEFAULT_DELAY);
+        setTimeout(() => this.endRollAndTriggerCards(data, client), DEFAULT_DELAY);
     }
 
     @SubscribeMessage(events.input.END_ROLL)
-    async endRollAndTriggerCards(@MessageBody() data: EndRoll,
-                                 @ConnectedSocket() client: Socket): Promise<void> {
-        const game = this.h(data.game);
-        const latestRoll = game.mostRecentRoll;
+    endRollAndTriggerCards(@MessageBody() data: EndRoll,
+              @ConnectedSocket() client: Socket): void {
+        const latestRoll = this.h(data.game).mostRecentRoll;
         this.server.in(data.game).emit(events.output.FINAL_DICE_ROLL, {
             player: data.playerId,
             dice: latestRoll.dice,
             sum: latestRoll.sum
         });
-        setTimeout(() => {
+
+        this.checkAndTriggerRedCards(data, client);
+    }
+
+    checkAndTriggerRedCards(data: EndRoll, client: Socket) {
+        const game = this.h(data.game);
+
+        if (game.anyRedCardsTriggered()) {
             const beforeRed: { [p: number]: number } = game.currentPlayerMoneyMap;
             game.triggerRedCards();
             const afterRed: { [p: number]: number } = game.currentPlayerMoneyMap;
@@ -199,54 +203,70 @@ export class GameGateway implements OnGatewayDisconnect {
                 fromPlayer: data.playerId
             });
 
-            setTimeout(() => {
-                const beforeBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
-                game.triggerBlueCards();
-                const afterBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
+            setTimeout(() => this.checkAndTriggerBlueCards(data, client), DEFAULT_DELAY);
+        } else {
+            this.checkAndTriggerBlueCards(data, client);
+        }
+    }
 
-                // now each player gets their own money, no stealing
-                // [playerId]: { gains, newMoney }
-                const blueResult = {};
-                Object.keys(afterBlue).forEach((id: string) => {
-                    blueResult[id] = {
-                        gains: afterBlue[id] - beforeBlue[id],
-                        newMoney: afterBlue[id]
-                    };
-                });
-                this.server.in(data.game).emit(events.output.BLUE_CARD_EFFECTS, {
-                    result: blueResult
-                });
-                setTimeout(() => {
-                    // now only current player gets coins
-                    const beforeGreen = game.currentPlayer.money;
-                    game.triggerGreenCards();
-                    const afterGreen = game.currentPlayer.money;
+    checkAndTriggerBlueCards(data: EndRoll, client: Socket) {
+        const game = this.h(data.game);
 
-                    let wineryToggled = false;
-                    if (game.isCardActivated(CardName.Winery)) {
-                        // Winery was activated (or deactivated), toggle it on the client too
-                        wineryToggled = true;
-                    }
+        if (game.anyBlueCardsTriggered()) {
+            const beforeBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
+            game.triggerBlueCards();
+            const afterBlue: { [p: number]: number } = game.currentPlayerMoneyMap;
 
-                    this.server.in(data.game).emit(events.output.GREEN_CARD_EFFECTS, {
-                        wineryToggled,
-                        player: data.playerId,
-                        newMoney: afterGreen,
-                        gains: afterGreen - beforeGreen
-                    });
+            // now each player gets their own money, no stealing
+            // [playerId]: { gains, newMoney }
+            const blueResult = {};
+            Object.keys(afterBlue).forEach((id: string) => {
+                blueResult[id] = {
+                    gains: afterBlue[id] - beforeBlue[id],
+                    newMoney: afterBlue[id]
+                };
+            });
+            this.server.in(data.game).emit(events.output.BLUE_CARD_EFFECTS, {
+                result: blueResult
+            });
 
-                    if (game.isCardActivated(CardName.LogisticsCompany)) {
-                        // TODO: Logistics company - WAIT FOR INPUT, just like purple cards
-                        this.server.to(`${client.id}`).emit(events.output.LOGISTICS_COMPANY_WAIT);
-                    } else {
-                        setTimeout(() => {
-                            // this logic is repeated either here or after we received the input from Logistic company
-                            this.triggerPurpleCards(data, client);
-                        }, DEFAULT_DELAY);
-                    }
-                }, DEFAULT_DELAY);
-            }, DEFAULT_DELAY);
-        }, DEFAULT_DELAY);
+            setTimeout(() => this.checkAndTriggerGreenCards(data, client), DEFAULT_DELAY);
+        } else {
+            this.checkAndTriggerGreenCards(data, client);
+        }
+    }
+
+    checkAndTriggerGreenCards(data: EndRoll, client: Socket) {
+        const game = this.h(data.game);
+
+        if (game.anyGreenCardsTriggered()) {
+            // now only current player gets coins
+            const beforeGreen = game.currentPlayer.money;
+            game.triggerGreenCards();
+            const afterGreen = game.currentPlayer.money;
+
+            let wineryToggled = false;
+            if (game.isCardActivated(CardName.Winery)) {
+                // Winery was activated (or deactivated), toggle it on the client too
+                wineryToggled = true;
+            }
+
+            this.server.in(data.game).emit(events.output.GREEN_CARD_EFFECTS, {
+                wineryToggled,
+                player: data.playerId,
+                newMoney: afterGreen,
+                gains: afterGreen - beforeGreen
+            });
+
+            if (game.isCardActivated(CardName.LogisticsCompany)) {
+                this.server.to(`${client.id}`).emit(events.output.LOGISTICS_COMPANY_WAIT);
+            } else {
+                // this logic is repeated either here or after we received the input from Logistic company
+                setTimeout(() => this.checkAndTriggerPurpleCards(data, client), DEFAULT_DELAY);
+            }
+        } else {
+            this.checkAndTriggerPurpleCards(data, client);
+        }
     }
 
     @SubscribeMessage(events.input.LOGISTIC_COMPANY_INPUT)
@@ -262,58 +282,59 @@ export class GameGateway implements OnGatewayDisconnect {
             sourcePlayer: data.playerId,
             playersAndCards: data.args
         });
-        setTimeout(() => {
-            this.triggerPurpleCards(data, client);
-        }, DEFAULT_DELAY);
+        setTimeout(() => this.checkAndTriggerPurpleCards(data, client), DEFAULT_DELAY);
     }
 
-    triggerPurpleCards(data: EndRoll, client: Socket): void {
+    checkAndTriggerPurpleCards(data: EndRoll, client: Socket): void {
         const game = this.h(data.game);
-        const beforePassivePurple = game.currentPlayerMoneyMap;
-        game.triggerPassivePurpleCards();
-        const afterPassivePurple = game.currentPlayerMoneyMap;
 
-        // this tells us, that Park was activated (and all players' coins have been rebalanced), use different message on client
-        const parkActivated = game.isCardActivated(CardName.Park);
+        if (game.anyPassivePurpleCardsTriggered()) {
+            const beforePassivePurple = game.currentPlayerMoneyMap;
+            game.triggerPassivePurpleCards();
+            const afterPassivePurple = game.currentPlayerMoneyMap;
 
-        const passivePurpleResult = {};
-        Object.keys(afterPassivePurple).forEach((id: string) => {
-            if (Number(id) === data.playerId) {
-                // we only care about our gains
-                passivePurpleResult[id] = {
-                    gains: afterPassivePurple[id] - beforePassivePurple[id],
-                    newMoney: afterPassivePurple[id]
-                };
-            } else {
-                passivePurpleResult[id] = {
-                    newMoney: afterPassivePurple[id]
-                };
-            }
-        });
+            // this tells us, that Park was activated (and all players' coins have been rebalanced), use different message on client
+            const parkActivated = game.isCardActivated(CardName.Park);
 
-        this.server.in(data.game).emit(events.output.PASSIVE_PURPLE_CARD_EFFECTS, {
-            parkActivated,
-            result: passivePurpleResult,
-            player: data.playerId
-        });
+            const passivePurpleResult = {};
+            Object.keys(afterPassivePurple).forEach((id: string) => {
+                if (Number(id) === data.playerId) {
+                    // we only care about our gains
+                    passivePurpleResult[id] = {
+                        gains: afterPassivePurple[id] - beforePassivePurple[id],
+                        newMoney: afterPassivePurple[id]
+                    };
+                } else {
+                    passivePurpleResult[id] = {
+                        newMoney: afterPassivePurple[id]
+                    };
+                }
+            });
 
-        if (game.hasActivePurpleCards()) {
+            this.server.in(data.game).emit(events.output.PASSIVE_PURPLE_CARD_EFFECTS, {
+                parkActivated,
+                result: passivePurpleResult,
+                player: data.playerId
+            });
+
+            setTimeout(() => this.checkAndTriggerActivePurpleCards(data, client), DEFAULT_DELAY);
+        } else {
+            this.checkAndTriggerActivePurpleCards(data, client);
+        }
+    }
+
+    checkAndTriggerActivePurpleCards(data: EndRoll, client: Socket) {
+        const game = this.h(data.game);
+        if (game.anyActivePurpleCardsTriggered()) {
             this.server.to(`${client.id}`).emit(events.output.ACTIVE_PURPLE_CARD_WAIT);
         } else {
-            // Town Hall check
-            if (game.currentPlayer.money === 0) {
-                game.currentPlayer.money += 1;
-                this.server.in(data.game).emit(events.output.TOWN_HALL_GAIN, {
-                    player: data.playerId
-                });
-            }
-            this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
+            this.townHallCheck(data);
         }
     }
 
     @SubscribeMessage(events.input.ACTIVE_PURPLE_CARDS_INPUT)
-    async activePurpleCards(@MessageBody() data: ActivePurpleCardsInput,
-                            @ConnectedSocket() client: Socket): Promise<void> {
+    activePurpleCards(@MessageBody() data: ActivePurpleCardsInput,
+                            @ConnectedSocket() client: Socket): void {
         const handler = this.h(data.game);
         const results: {[key in CardName]?: any} = {};
         // this should arrive only if it's actually not empty
@@ -364,15 +385,18 @@ export class GameGateway implements OnGatewayDisconnect {
             }
         });
         this.server.in(data.game).emit(events.output.ACTIVE_PURPLE_CARD_RESULT, { results });
-        setTimeout(() => {
-            if (handler.currentPlayer.money === 0) {
-                handler.currentPlayer.money += 1;
-                this.server.in(data.game).emit(events.output.TOWN_HALL_GAIN, {
-                    player: data.playerId
-                });
-            }
-            this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
-        }, DEFAULT_DELAY);
+        setTimeout(() => this.townHallCheck(data), DEFAULT_DELAY);
+    }
+
+    townHallCheck(data: EndRoll) {
+        const game = this.h(data.game);
+        if (game.currentPlayer.money === 0) {
+            game.currentPlayer.money += 1;
+            this.server.in(data.game).emit(events.output.TOWN_HALL_GAIN, {
+                player: data.playerId
+            });
+        }
+        this.server.in(data.game).emit(events.output.BUILDING_POSSIBLE);
     }
 
     @SubscribeMessage(events.input.BUY_CARD)
@@ -409,8 +433,8 @@ export class GameGateway implements OnGatewayDisconnect {
     }
 
     @SubscribeMessage(events.input.END_TURN)
-    async endTurn(@MessageBody() data: EndTurn,
-                  @ConnectedSocket() client: Socket): Promise<void> {
+    endTurn(@MessageBody() data: EndTurn,
+                  @ConnectedSocket() client: Socket): void {
         const game = this.h(data.game);
 
         if (data.useItCenter) {
