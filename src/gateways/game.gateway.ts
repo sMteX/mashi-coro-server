@@ -157,7 +157,6 @@ export class GameGateway implements OnGatewayDisconnect {
             sum: this.h(data.game).mostRecentRoll.sum,
             player: data.playerId
         });
-        // TODO: will this work?
         setTimeout(() => this.endRollAndTriggerCards(data, client), DEFAULT_DELAY);
     }
 
@@ -202,7 +201,6 @@ export class GameGateway implements OnGatewayDisconnect {
                 result: redResult,
                 fromPlayer: data.playerId
             });
-
             setTimeout(() => this.checkAndTriggerBlueCards(data, client), DEFAULT_DELAY);
         } else {
             this.checkAndTriggerBlueCards(data, client);
