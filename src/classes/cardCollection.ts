@@ -3,10 +3,11 @@ import { Card, cardMap, CardName, CardSymbol } from '@app/classes/cards';
 type AddCardsType = (Card|CardName) | [Card|CardName, number];
 export class CardCollection {
     cards: {
-        [card in CardName]?: {
-            count: number;
-            active: boolean
-        }
+        // [card in CardName]?: {
+        //     count: number;
+        //     active: boolean
+        // }
+        [card in CardName]?: boolean[]
     };
 
     constructor() {
@@ -17,27 +18,33 @@ export class CardCollection {
         return typeof card === 'object' ? card.cardName : card;
     }
 
+    getCardStates(card: Card|CardName): boolean[] {
+        return this.cards[this.getName(card)] || [];
+    }
+
     get uniqueCardCount (): number {
         return Object.keys(this.cards).length;
     }
 
     deactivate(card: Card|CardName): void {
+        // deactivates ALL cards of given name
         const name = this.getName(card);
         if (this.cards[name]) {
-            this.cards[name].active = false;
+            this.cards[name].fill(false);
         }
     }
 
     activate(card: Card|CardName): void {
+        // activates ALL cards of given name
         const name = this.getName(card);
         if (this.cards[name]) {
-            this.cards[name].active = true;
+            this.cards[name].fill(true);
         }
     }
 
-    isActive(card: Card|CardName): boolean {
+    isActive(card: Card|CardName, i: number): boolean {
         const name = this.getName(card);
-        return this.cards[name] && this.cards[name].active;
+        return this.cards[name] && this.cards[name][i];
     }
 
     hasCard(card: Card|CardName): boolean {
