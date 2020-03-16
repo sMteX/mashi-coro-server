@@ -1,37 +1,51 @@
+import * as _ from 'lodash';
 import { Server } from 'socket.io';
 import { Game } from '@app/database/entities/game.entity';
 import { PlayerGameData } from './playerGameData';
 import {
-    applePark,
-    bakery,
+    activePurpleCards, blueCards,
     Card,
     CardColor,
     cardMap,
     CardName,
-    coffeeShop,
-    dairyShop,
-    dominants,
-    farm,
-    forest,
-    furnitureFactory,
-    mall,
-    mine,
-    officeBuilding,
-    restaurant,
-    shop,
-    stadium,
-    televisionStudio,
-    wheatField,
+    dominants, greenCards,
+    passivePurpleCards,
+    redCards,
 } from './cards';
 import { CardCollection } from '@app/classes/cardCollection';
 
 class GameData {
     bank: number;
-    cards: CardCollection;
+    lowCards: CardCollection;
+    highCards: CardCollection;
+    purpleCards: CardCollection;
 
+    // these arrays represent piles, that we draw from
+    lowCardsPile: CardName[];
+    highCardsPile: CardName[];
+    purpleCardsPile: CardName[];
     constructor(playerCount: number) {
         this.bank = 210 - playerCount * 3;
-        this.cards = new CardCollection();
+        this.lowCards = new CardCollection();
+        this.highCards = new CardCollection();
+        this.purpleCards = new CardCollection();
+        this.lowCardsPile = [];
+        this.highCardsPile = [];
+        this.purpleCardsPile = [];
+    }
+
+    removeCard(card: CardName): void {
+        const cardObj = cardMap[card];
+        if (cardObj.color === CardColor.Purple) {
+            this.purpleCards.removeCard(card);
+        } else {
+            const avg = cardObj.triggerNumbers.reduce((acc, cur) => acc + cur, 0) / cardObj.triggerNumbers.length;
+            if (avg <= 6) {
+                this.lowCards.removeCard(card);
+            } else {
+                this.highCards.removeCard(card);
+            }
+        }
     }
 }
 
@@ -57,6 +71,8 @@ export class GameHandler {
         sum: number;
     };
     amusementParkJustBought: boolean = false;
+    airportJustBought: boolean = false;
+    boughtCardThisTurn: boolean = false;
 
     constructor(game: Game, server: Server, socketIdMap: { [socketId: string]: number }) {
         this.game = game;
@@ -85,6 +101,10 @@ export class GameHandler {
         return this.playerData[id];
     }
 
+    get allPlayers(): PlayerGameData[] {
+        return Object.values(this.playerData);
+    }
+
     get currentPlayer(): PlayerGameData {
         return this.getPlayer(this.currentPlayerId);
     }
@@ -98,6 +118,8 @@ export class GameHandler {
     setCurrentPlayer(player: number) {
         this.currentPlayerId = player;
         this.amusementParkJustBought = false;
+        this.airportJustBought = false;
+        this.boughtCardThisTurn = false;
     }
 
     get nextPlayerId(): number {
@@ -154,28 +176,43 @@ export class GameHandler {
     triggerRedCards() {
         const acOrder = this.antiClockwisePlayers(this.currentPlayerId);
         acOrder.forEach((player) => {
-            Object.entries(player.cards.cards).forEach(([cardName, count]) => {
+            Object.entries(player.cards.cards).forEach(([cardName, { active, count }]) => {
                 const card: Card = cardMap[cardName];
                 if (card.color !== CardColor.Red || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                     return;
                 }
-                for (let i = 0; i < count; i += 1) {
-                    card.trigger(player, this);
+                if (!active) {
+                    player.activateCard(card);
+                } else {
+                    for (let i = 0; i < count; i += 1) {
+                        card.trigger(player, this);
+                    }
                 }
             });
         });
     }
 
     triggerBlueCards() {
+        // Fishing Ship has a little different flow - the card gets triggered with the same dice roll for everyone
+        // we assume that someone has it, pre-generate 2 dice roll, and trigger the card with that particular roll
+        const fishingShipRoll = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1;
         // for each card every player has (excluding dominants), call the card's trigger()
         Object.values(this.playerData).forEach((player) => {
-            Object.entries(player.cards.cards).forEach(([cardName, count]) => {
+            Object.entries(player.cards.cards).forEach(([cardName, { active, count }]) => {
                 const card: Card = cardMap[cardName];
                 if (card.color !== CardColor.Blue || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                     return;
                 }
-                for (let i = 0; i < count; i += 1) {
-                    card.trigger(player, this);
+                if (!active) {
+                    player.activateCard(card);
+                } else {
+                    for (let i = 0; i < count; i += 1) {
+                        if (card.cardName === CardName.FishingShip) {
+                            card.trigger(player, this, fishingShipRoll);
+                        } else {
+                            card.trigger(player, this);
+                        }
+                    }
                 }
             });
         });
@@ -184,29 +221,55 @@ export class GameHandler {
     triggerGreenCards() {
         // for each card player has (excluding dominants), call the card's trigger()
         const player = this.currentPlayer;
-        Object.entries(player.cards.cards).forEach(([cardName, count]) => {
+        Object.entries(player.cards.cards).forEach(([cardName, { active, count }]) => {
             const card: Card = cardMap[cardName];
+            if (card.cardName === CardName.LogisticsCompany) {
+                return; // Logistic Company has special treatment after this method ends
+            }
             if (card.color !== CardColor.Green || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                 return;
             }
-            for (let i = 0; i < count; i += 1) {
-                card.trigger(player, this);
+            if (!active) {
+                player.activateCard(card);
+            } else {
+                for (let i = 0; i < count; i += 1) {
+                    card.trigger(player, this);
+                }
             }
         });
     }
 
     triggerPassivePurpleCards() {
-        // TODO: implement Financial Office, Park and Publishing Office
-        const stadium = cardMap[CardName.Stadium];
-        if (this.currentPlayer.hasCard(stadium) && stadium.triggerNumbers.includes(this.mostRecentRoll.sum)) {
-            stadium.trigger(this.currentPlayer, this);
-        }
+        passivePurpleCards.forEach((cardName) => {
+            const card = cardMap[cardName];
+            if (this.currentPlayer.hasCard(cardName) && card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
+                card.trigger(this.currentPlayer, this);
+            }
+        });
     }
 
-    hasActivePurpleCards(): boolean {
-        // TODO: add Water Treatment Plant (IT Center is special of specials, it can be triggered passively)
-        const activeCards = [CardName.TelevisionStudio, CardName.OfficeBuilding];
-        return this.mostRecentRoll.sum === 6 && activeCards.some(card => this.currentPlayer.hasCard(card));
+    anyRedCardsTriggered(): boolean {
+        return this.otherPlayers.some(player => redCards.some(card => this.isCardActivated(card, player)));
+    }
+
+    anyBlueCardsTriggered(): boolean {
+        return this.allPlayers.some(player => blueCards.some(card => this.isCardActivated(card, player)));
+    }
+
+    anyGreenCardsTriggered(): boolean {
+        return greenCards.some(card => this.isCardActivated(card));
+    }
+
+    anyPassivePurpleCardsTriggered(): boolean {
+        return passivePurpleCards.some(card => this.isCardActivated(card));
+    }
+
+    anyActivePurpleCardsTriggered(): boolean {
+        return activePurpleCards.some(card => this.isCardActivated(card));
+    }
+
+    isCardActivated (card: CardName, player: PlayerGameData = this.currentPlayer): boolean {
+        return player.hasCard(card) && cardMap[card].triggerNumbers.includes(this.mostRecentRoll.sum);
     }
 
     setTargetPlayer(id: number) {
@@ -224,21 +287,41 @@ export class GameHandler {
         this.swapCardOwn = null;
     }
 
-    buyCard(playerId: number, card: CardName): void {
+    buyCard(playerId: number, card: CardName): CardName[] {
         // on server, dominants are treated as regular cards, but they're not on the table
         const cardObj = cardMap[card];
         this.playerData[playerId].addCard(card);
         if (!dominants.map(c => c.cardName).includes(card)) {
-            this.gameData.cards.removeCard(card);
+            this.gameData.removeCard(card);
         }
         this.playerData[playerId].money -= cardObj.cost;
         this.gameData.bank += cardObj.cost;
 
+        this.boughtCardThisTurn = true;
         // flags to disable a dominant's effect the turn it's been bought:
         if (card === CardName.AmusementPark) {
             this.amusementParkJustBought = true;
+        } else if (card === CardName.Airport) {
+            this.airportJustBought = true;
         }
-        // TODO: Airport in the same fashion
+
+        const drawnCards = [];
+        while (this.gameData.lowCards.uniqueCardCount < 5) {
+            const c = this.gameData.lowCardsPile.pop();
+            this.gameData.lowCards.addCard(c);
+            drawnCards.push(c);
+        }
+        while (this.gameData.highCards.uniqueCardCount < 5) {
+            const c = this.gameData.highCardsPile.pop();
+            this.gameData.highCards.addCard(c);
+            drawnCards.push(c);
+        }
+        while (this.gameData.purpleCards.uniqueCardCount < 2) {
+            const c = this.gameData.purpleCardsPile.pop();
+            this.gameData.purpleCards.addCard(c);
+            drawnCards.push(c);
+        }
+        return drawnCards;
     }
 
     rollDice(amount: number): number[] {
@@ -258,28 +341,50 @@ export class GameHandler {
         return dice;
     }
 
-    startGame() {
-        // start the game - players are gathered, their money and cards are created/assigned in PlayerGameData constructor
-        // game bank is filled in GameHandler constructor
-        // starting player is generated and assigned in constructInitialData()
-        // what's left - create buyable cards
-        this.gameData.cards.addCards(
-            [wheatField, 6],
-            [farm, 6],
-            [bakery, 6],
-            [coffeeShop, 6],
-            [shop, 6],
-            [forest, 6],
-            [stadium, 4],
-            [televisionStudio, 4],
-            [officeBuilding, 4],
-            [dairyShop, 6],
-            [furnitureFactory, 6],
-            [mine, 6],
-            [applePark, 6],
-            [restaurant, 6],
-            [mall, 6]
-        );
+    generateStartingCards () {
+        const avg = (a: number[]) => a.reduce((acc, cur) => acc + cur, 0) / (a.length || 1);
+        // 1) All cards are separated into 3 categories - low cards, high cards and purple cards
+        Object.values(cardMap).forEach((card) => {
+            if (card.color === CardColor.Dominant) {
+                return;
+            }
+            if (card.color === CardColor.Purple) {
+                this.gameData.purpleCardsPile.push(...Array(4).fill(card.cardName));
+                return;
+            }
+            const repeatedCards = Array(6).fill(card.cardName);
+            if (avg(card.triggerNumbers) <= 6) {
+                this.gameData.lowCardsPile.push(...repeatedCards);
+            } else {
+                this.gameData.highCardsPile.push(...repeatedCards);
+            }
+        });
+        // 2) each category is shuffled independently
+        this.gameData.lowCardsPile = _.shuffle(this.gameData.lowCardsPile);
+        this.gameData.highCardsPile = _.shuffle(this.gameData.highCardsPile);
+        this.gameData.purpleCardsPile = _.shuffle(this.gameData.purpleCardsPile);
+        // 3) draw cards from each category, until there are 5 different low cards, 5 different high cards and 2 different purple cards
+        const lowCards: {[card in CardName]?: number} = {};
+        const highCards: {[card in CardName]?: number} = {};
+        const purpleCards: {[card in CardName]?: number} = {};
+
+        while (Object.keys(lowCards).length < 5) {
+            const card = this.gameData.lowCardsPile.pop();
+            lowCards[card] = (lowCards[card] || 0) + 1;
+        }
+        while (Object.keys(highCards).length < 5) {
+            const card = this.gameData.highCardsPile.pop();
+            highCards[card] = (highCards[card] || 0) + 1;
+        }
+        while (Object.keys(purpleCards).length < 2) {
+            const card = this.gameData.purpleCardsPile.pop();
+            purpleCards[card] = (purpleCards[card] || 0) + 1;
+        }
+        return {
+            lowCards,
+            highCards,
+            purpleCards
+        };
     }
 
     constructInitialData() {
@@ -298,24 +403,27 @@ export class GameHandler {
             ],
             money: 3
         }));
-        // TODO: this will probably change with expansions and might be generated elsewhere/at different time
-        const buyableCards = [
-            { card: CardName.WheatField, count: 6 },
-            { card: CardName.Farm, count: 6 },
-            { card: CardName.Bakery, count: 6 },
-            { card: CardName.CoffeeShop, count: 6 },
-            { card: CardName.Shop, count: 6 },
-            { card: CardName.Forest, count: 6 },
-            { card: CardName.Stadium, count: 4 },
-            { card: CardName.TelevisionStudio, count: 4 },
-            { card: CardName.OfficeBuilding, count: 4 },
-            { card: CardName.DairyShop, count: 6 },
-            { card: CardName.FurnitureFactory, count: 6 },
-            { card: CardName.Mine, count: 6 },
-            { card: CardName.ApplePark, count: 6 },
-            { card: CardName.Restaurant, count: 6 },
-            { card: CardName.Mall, count: 6 }
-        ];
+
+        const buyableCards = [];
+
+        // generate buyable cards, save them here in handler and also send to the clients
+        const { lowCards, highCards, purpleCards } = this.generateStartingCards();
+        Object.entries(lowCards).forEach(([cardName, count]) => {
+            const cardEnum = Number(cardName) as CardName;
+            this.gameData.lowCards.addCard(cardEnum, count);
+            buyableCards.push({ count, card: cardEnum });
+        });
+        Object.entries(highCards).forEach(([cardName, count]) => {
+            const cardEnum = Number(cardName) as CardName;
+            this.gameData.highCards.addCard(cardEnum, count);
+            buyableCards.push({ count, card: cardEnum });
+        });
+        Object.entries(purpleCards).forEach(([cardName, count]) => {
+            const cardEnum = Number(cardName) as CardName;
+            this.gameData.purpleCards.addCard(cardEnum, count);
+            buyableCards.push({ count, card: cardEnum });
+        });
+
         const winningCards = [
             ...dominants.map(({ cardName }) => cardName)
         ];

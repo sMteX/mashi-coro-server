@@ -15,7 +15,13 @@ export interface RollDice extends BaseGameInput {
     transmitter: boolean;
 }
 
+export interface AddTwo extends BaseGameInput {}
+
 export interface EndRoll extends BaseGameInput {}
+
+export interface LogisticCompanyInput extends BaseGameInput {
+    args: { player: number; card: CardName }[];
+}
 
 export interface ActivePurpleCardsInput extends BaseGameInput {
     inputs: { [card in CardName]?: any };
@@ -23,4 +29,6 @@ export interface ActivePurpleCardsInput extends BaseGameInput {
 export interface BuyCard extends BaseGameInput {
     card: CardName;
 }
-export interface EndTurn extends BaseGameInput {}
+export interface EndTurn extends BaseGameInput {
+    useItCenter: boolean;
+}
