@@ -3,6 +3,7 @@ import { Game } from '@app/database/entities/game.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Validator } from 'class-validator';
+import { ValidateFailReason } from '@utils/enums';
 
 const validator = new Validator();
 
@@ -15,14 +16,15 @@ export class ApiController {
     @Post('/createGame')
     async createGame(): Promise<string> {
         let game = new Game();
+        game.running = false; // just to make sure
         game = await this.gameRepository.save(game);
         return game.slug;
     }
 
     @Post('/validateGame')
-    async validateGameSlug(@Body() data: { slug: string; }): Promise<{success: boolean, full?: boolean}> {
+    async validateGameSlug(@Body() data: { slug: string; }): Promise<{success: boolean, reason?: ValidateFailReason}> {
         if (!validator.isUUID(data.slug)) {
-            return { success: false, full: false };
+            return { success: false, reason: ValidateFailReason.GAME_NOT_FOUND };
         }
         const game = await this.gameRepository.findOne({
             where: {
@@ -31,11 +33,14 @@ export class ApiController {
             relations: ['players']
         });
         if (!game) {
-            return { success: false, full: false };
+            return { success: false, reason: ValidateFailReason.GAME_NOT_FOUND };
         }
-        if (game.players.length <= 3) { // this is BEFORE joining, so there must be at most 3 players (careful, it might change in the time before this validation and actually joining)
-            return { success: true };
+        if (game.running) {
+            return { success: false, reason: ValidateFailReason.GAME_RUNNING };
         }
-        return { success: false, full: true };
+        if (game.players.length === 4) { // this is BEFORE joining, so there must be at most 3 players (careful, it might change in the time before this validation and actually joining)
+            return { success: false, reason: ValidateFailReason.GAME_FULL };
+        }
+        return { success: true };
     }
 }

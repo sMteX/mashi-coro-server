@@ -18,6 +18,7 @@ import {
 import { LobbyPlayer } from '@utils/interfaces/events/lobby/output.interface';
 import { events as eventConstants } from '@utils/constants';
 import { Player } from '@app/database/entities/player.entity';
+import { ValidateFailReason } from '@utils/enums';
 
 const { lobby: events } = eventConstants;
 interface GameData {
@@ -30,6 +31,8 @@ interface GameData {
         }
     };
 }
+
+type PlayerEnterLobbyReturnType = { success: boolean } & ({ id: number; name: string; } | { reason: ValidateFailReason; });
 
 @WebSocketGateway({ namespace: events.namespaceName })
 export class LobbyGateway implements OnGatewayDisconnect {
@@ -52,7 +55,7 @@ export class LobbyGateway implements OnGatewayDisconnect {
 
     @SubscribeMessage(events.input.PLAYER_ENTER)
     async playerEnter(@MessageBody() data: PlayerEnter,
-                      @ConnectedSocket() client: Socket): Promise<{ id: number; name: string; }> {
+                      @ConnectedSocket() client: Socket): Promise<PlayerEnterLobbyReturnType> {
         if (!this.data[data.game]) {
             this.data[data.game] = {
                 game: null,
@@ -71,7 +74,10 @@ export class LobbyGateway implements OnGatewayDisconnect {
         });
 
         if (this.data[data.game].game.players.length >= 4) {
-            return null;
+            return { success: false, reason: ValidateFailReason.GAME_FULL };
+        }
+        if (this.data[data.game].game.running) {
+            return { success: false, reason: ValidateFailReason.GAME_RUNNING };
         }
 
         // creates a new player entity and saves it (this.games[...].players DOESN'T HAVE the reference to it because we loaded it before this save, but we don't need it)
@@ -100,6 +106,7 @@ export class LobbyGateway implements OnGatewayDisconnect {
         }
         // return new player's ID
         return {
+            success: true,
             id: player.id,
             name: data.playerName
         };
@@ -121,9 +128,11 @@ export class LobbyGateway implements OnGatewayDisconnect {
     }
 
     @SubscribeMessage(events.input.START_GAME)
-    startGame(@MessageBody() data: StartGame,
-              @ConnectedSocket() client: Socket): void {
+    async startGame(@MessageBody() data: StartGame,
+              @ConnectedSocket() client: Socket): Promise<void> {
         this.data[data.game].started = true;
+        this.data[data.game].game.running = true;
+        await this.gameRepository.save(this.data[data.game].game);
         this.server.in(data.game).emit(events.output.GAME_STARTED);
     }
 
