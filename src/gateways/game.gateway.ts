@@ -30,7 +30,7 @@ interface GamePair {
 }
 const DEFAULT_DELAY: number = 1000;
 
-@WebSocketGateway({ namespace: events.namespaceName })
+@WebSocketGateway({ namespace: events.namespaceName, transports: ['websocket'] })
 export class GameGateway implements OnGatewayDisconnect {
     constructor(
         @InjectRepository(Game) private readonly gameRepository: Repository<Game>

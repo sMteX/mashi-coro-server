@@ -34,7 +34,7 @@ interface GameData {
 
 type PlayerEnterLobbyReturnType = { success: boolean } & ({ id: number; name: string; } | { reason: ValidateFailReason; });
 
-@WebSocketGateway({ namespace: events.namespaceName })
+@WebSocketGateway({ namespace: events.namespaceName, transports: ['websocket'] })
 export class LobbyGateway implements OnGatewayDisconnect {
     constructor(
         @InjectRepository(Game) private readonly gameRepository: Repository<Game>,
