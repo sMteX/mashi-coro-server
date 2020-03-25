@@ -13,10 +13,12 @@ import { Game } from '@app/database/entities/game.entity';
 import { events as eventConstants } from '@utils/constants';
 import { GameHandler } from '@app/classes/gameHandler';
 import {
-    ActivePurpleCardsInput, AddTwo,
+    ActivePurpleCardsInput,
+    AddTwo,
     BuyCard,
     EndRoll,
-    EndTurn, LogisticCompanyInput,
+    EndTurn,
+    LogisticCompanyInput,
     PlayerConnect,
     RollDice
 } from '@utils/interfaces/events/game/input.interface';
@@ -238,6 +240,9 @@ export class GameGateway implements OnGatewayDisconnect {
         const game = this.h(data.game);
 
         if (game.anyGreenCardsTriggered()) {
+            // only (possibly) trigger Logistics Company if it was active BEFORE triggering green cards
+            // (because if it was inactive before, then triggerGreenCards() will reactivate it and it will look active anyway
+            const shouldActivateLogisticsCompany = game.currentPlayer.isCardActive(CardName.LogisticsCompany);
             // now only current player gets coins
             const beforeGreen = game.currentPlayer.money;
             game.triggerGreenCards();
@@ -256,7 +261,7 @@ export class GameGateway implements OnGatewayDisconnect {
                 gains: afterGreen - beforeGreen
             });
 
-            if (game.isCardActivated(CardName.LogisticsCompany)) {
+            if (game.isCardActivated(CardName.LogisticsCompany) && shouldActivateLogisticsCompany) {
                 this.server.to(`${client.id}`).emit(events.output.LOGISTICS_COMPANY_WAIT);
             } else {
                 // this logic is repeated either here or after we received the input from Logistic company

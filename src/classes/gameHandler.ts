@@ -223,15 +223,15 @@ export class GameHandler {
         const player = this.currentPlayer;
         Object.entries(player.cards.cards).forEach(([cardName, { active, count }]) => {
             const card: Card = cardMap[cardName];
-            if (card.cardName === CardName.LogisticsCompany) {
-                return; // Logistic Company has special treatment after this method ends
-            }
             if (card.color !== CardColor.Green || !card.triggerNumbers.includes(this.mostRecentRoll.sum)) {
                 return;
             }
             if (!active) {
                 player.activateCard(card);
             } else {
+                if (card.cardName === CardName.LogisticsCompany) {
+                    return; // Logistic Company has special treatment after this method ends
+                }
                 for (let i = 0; i < count; i += 1) {
                     card.trigger(player, this);
                 }
