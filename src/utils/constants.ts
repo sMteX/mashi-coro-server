@@ -32,7 +32,6 @@ export const events = {
             GAME_DATA_LOAD: 'gameDataLoad',
             GAME_STARTING: 'gameStarting',
             DICE_ROLL_OUTPUT: 'diceRollOutput',
-            ADDED_TWO: 'addedTwo',
             FINAL_DICE_ROLL: 'finalDiceRoll',
             RED_CARD_EFFECTS: 'redCardEffects',
             BLUE_CARD_EFFECTS: 'blueCardEffects',

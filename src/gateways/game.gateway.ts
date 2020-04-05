@@ -155,10 +155,6 @@ export class GameGateway implements OnGatewayDisconnect {
     addTwo(@MessageBody() data: AddTwo,
                  @ConnectedSocket() client: Socket): void {
         this.h(data.game).mostRecentRoll.sum += 2;
-        this.server.in(data.game).emit(events.output.ADDED_TWO, {
-            sum: this.h(data.game).mostRecentRoll.sum,
-            player: data.playerId
-        });
         setTimeout(() => this.endRollAndTriggerCards(data, client), DEFAULT_DELAY);
     }
 
