@@ -468,11 +468,13 @@ export const winery: Card = {
     triggerNumbers: [9],
 
     trigger (owner, { gameData }) {
-        if (owner.isCardActive(CardName.Vineyard)) {
-            const amount = owner.cardCount(CardName.Vineyard) * 6;
-            owner.money += amount;
-            gameData.bank -= amount;
+        // only triggers (and deactivates itself) if the player has Vineyard and can use it (it's active)
+        if (!owner.hasCard(CardName.Vineyard) || !owner.isCardActive(CardName.Vineyard)) {
+            return;
         }
+        const amount = owner.cardCount(CardName.Vineyard) * 6;
+        owner.money += amount;
+        gameData.bank -= amount;
         owner.deactivateCard(CardName.Winery);
     }
 };

@@ -239,14 +239,17 @@ export class GameGateway implements OnGatewayDisconnect {
             // only (possibly) trigger Logistics Company if it was active BEFORE triggering green cards
             // (because if it was inactive before, then triggerGreenCards() will reactivate it and it will look active anyway
             const shouldActivateLogisticsCompany = game.currentPlayer.isCardActive(CardName.LogisticsCompany);
+            const wineryBefore = game.currentPlayer.isCardActive(CardName.Winery);
             // now only current player gets coins
             const beforeGreen = game.currentPlayer.money;
             game.triggerGreenCards();
             const afterGreen = game.currentPlayer.money;
+            const wineryAfter = game.currentPlayer.isCardActive(CardName.Winery);
 
             let wineryToggled = false;
-            if (game.isCardActivated(CardName.Winery)) {
-                // Winery was activated (or deactivated), toggle it on the client too
+            if (game.isCardActivated(CardName.Winery) && (wineryBefore !== wineryAfter)) {
+                // Winery was triggered and activated or deactivated, toggle it on the client too
+                // should ignore situations where player doesn't have or can't use any Vineyard (the card can't be used = deactivated = state doesn't change)
                 wineryToggled = true;
             }
 
